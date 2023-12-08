@@ -1,0 +1,6 @@
+root_package_name: "github.com/saturn4er/boilerplate-go/test"
+goimports_local: "github.com/saturn4er/boilerplate-go"
+
+modules:
+  subscription:
+    import: "test.yaml"
