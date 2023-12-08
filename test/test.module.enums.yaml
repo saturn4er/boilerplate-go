@@ -1,0 +1,14 @@
+types:
+  enums:
+    - name: Role
+      values: [ User, Admin, Anonymous ]
+      helpers:
+        all_values:
+          var_name: AllRolesVariable
+          func_name: AllRolesFunc
+        is_category:
+          - name: Authorized
+            values: [ User, Admin ]
+    - name: OIDCProvider
+      values: [ Google ]
+      helpers: true
