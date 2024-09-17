@@ -21,6 +21,10 @@ func FilterExpression[T, V any](value filter.Filter[T], column string, mapper fu
 		return lessFilterGormCondition(typedValue, column, mapper)
 	case *filter.LessOrEqualsFilter[T]:
 		return lessOrEqualsFilterGormCondition(typedValue, column, mapper)
+	case *filter.IsNullFilter[T]:
+		return isNullFilterGormCondition(column)
+	case *filter.IsNotNullFilter[T]:
+		return isNotNullFilterGormCondition(column)
 	case *filter.InFilter[T]:
 		return inFilterGormCondition(typedValue, column, mapper)
 	case *filter.NotEqualsFilter[T]:
@@ -112,6 +116,14 @@ func lessOrEqualsFilterGormCondition[T, V any](lessFilter *filter.LessOrEqualsFi
 	}
 
 	return clause.Lte{Column: column, Value: mappedValue}, nil
+}
+
+func isNullFilterGormCondition(column string) (clause.Expression, error) {
+	return clause.Eq{Column: column, Value: nil}, nil
+}
+
+func isNotNullFilterGormCondition(column string) (clause.Expression, error) {
+	return clause.Neq{Column: column, Value: nil}, nil
 }
 
 func inFilterGormCondition[T, V any](inFilter *filter.InFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
