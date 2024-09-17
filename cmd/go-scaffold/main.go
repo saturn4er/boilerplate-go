@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/saturn4er/boilerplate-go/scaffold"
+	"github.com/saturn4er/boilerplate-go/scaffold/config"
 )
 
 func main() {
@@ -32,15 +33,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := scaffold.LoadConfig(flag.Arg(0))
+	genCfg, err := config.Load(flag.Arg(0))
 	if err != nil {
 		log.Printf("load scaffold config: %v\n", err)
 		os.Exit(1)
 	}
 
-	config.Module = module
+	genCfg.Module = module
 
-	if err := scaffold.Generate(config); err != nil {
+	if err := scaffold.Generate(genCfg); err != nil {
 		log.Printf("generate scaffold: %v\n", err)
 		os.Exit(1)
 	}

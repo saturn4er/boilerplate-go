@@ -13,6 +13,7 @@ import (
 	"github.com/go-pnp/go-pnp/pkg/optionutil"
 	"go.uber.org/multierr"
 
+	"github.com/saturn4er/boilerplate-go/scaffold/config"
 	"github.com/saturn4er/boilerplate-go/scaffoldtpl"
 )
 
@@ -21,7 +22,7 @@ type generatorOptions struct {
 }
 
 type generator struct {
-	config    *Config
+	config    *config.Config
 	options   *generatorOptions
 	templates []generatorTemplate
 	envs      map[string]string
@@ -36,7 +37,7 @@ func (g *generator) generate() error {
 
 	for moduleName, module := range g.config.Modules {
 		wg.Add(1)
-		go func(moduleName string, module importableConfig[ConfigModule]) {
+		go func(moduleName string, module config.Importable[*config.Module]) {
 			defer wg.Done()
 
 			if err := g.generateModule(moduleName, module); err != nil {
@@ -51,7 +52,7 @@ func (g *generator) generate() error {
 	return generateErr
 }
 
-func (g *generator) generateModule(moduleName string, module importableConfig[ConfigModule]) error {
+func (g *generator) generateModule(moduleName string, module config.Importable[*config.Module]) error {
 	if g.config.Module != "" && moduleName != g.config.Module {
 		return nil
 	}
@@ -173,7 +174,7 @@ func (g *generator) generateFile(
 	return nil
 }
 
-func Generate(config *Config, options ...optionutil.Option[generatorOptions]) error {
+func Generate(config *config.Config, options ...optionutil.Option[generatorOptions]) error {
 	modulesGenerator := generator{
 		config: config,
 		envs:   map[string]string{},

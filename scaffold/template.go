@@ -10,6 +10,8 @@ import (
 
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
+
+	"github.com/saturn4er/boilerplate-go/scaffold/config"
 )
 
 type generatorTemplate struct {
@@ -114,7 +116,7 @@ func loadTemplatesFromDir(fs embed.FS, dir string) ([]generatorTemplate, error) 
 		if header.Condition != "" {
 			condition, err = expr.Compile(header.Condition, expr.Env(map[string]interface{}{
 				"Module": "",
-				"Config": &Config{},
+				"Config": &config.Config{},
 			}))
 			if err != nil {
 				return nil, fmt.Errorf("compile template header condition: %w", err)

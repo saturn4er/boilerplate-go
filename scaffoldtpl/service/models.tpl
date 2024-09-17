@@ -28,7 +28,7 @@
           return &valCopy
         {{- end}}
       }
-      panic("called copy{{$oneOf.Name}} with invalid type")e
+      panic("called copy{{$oneOf.Name}} with invalid type")
     }
 {{- end }}
 {{- range $model := $module.Types.Models }}

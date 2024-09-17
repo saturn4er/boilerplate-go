@@ -11,15 +11,13 @@ import (
 	"github.com/samber/lo"
 	"github.com/stoewer/go-strcase"
 	"golang.org/x/tools/imports"
+
+	"github.com/saturn4er/boilerplate-go/scaffold/config"
 )
 
 const uuidPackage = "github.com/google/uuid"
 const decimalPackage = "github.com/shopspring/decimal"
 
-type indexed[T comparable, V any] struct {
-	Index T
-	Value V
-}
 type goType struct {
 	codeGenerator  *codeGenerator
 	Package        string
@@ -118,26 +116,25 @@ func (g goType) PackageImport() *codeGeneratorImport {
 func (g goType) DBAlternative() *goType {
 	switch {
 	case g.IsSlice:
-		elemDBAlternative := g.ElemType.DBAlternative()
-		if elemDBAlternative.Type == "string" {
-			return &goType{
+		return &goType{
+			codeGenerator: g.codeGenerator,
+			ElemType: &goType{
 				codeGenerator: g.codeGenerator,
-				ElemType: &goType{
-					codeGenerator: g.codeGenerator,
-					Type:          "string",
-				},
-				Package: "github.com/lib/pq",
-				Type:    "StringArray",
-			}
+				Type:          "string",
+			},
+			Package: "github.com/lib/pq",
+			Type:    "StringArray",
 		}
-		panic(fmt.Sprintf("storing '%v' is not supported", g.Ref()))
 	case g.IsMap:
 		return &goType{
 			codeGenerator: g.codeGenerator,
-			IsMap:         true,
-			KeyType:       g.KeyType.DBAlternative(),
-			ElemType:      g.ElemType.DBAlternative(),
+			ElemType: &goType{
+				codeGenerator: g.codeGenerator,
+				Type:          "string",
+			},
+			IsPtr: true,
 		}
+
 	case g.IsPtr:
 		return &goType{
 			codeGenerator: g.codeGenerator,
@@ -279,7 +276,7 @@ type codeGenerator struct {
 	packagePath    string
 	imports        []codeGeneratorImport
 	template       *template.Template
-	config         *Config
+	config         *config.Config
 }
 
 func (g *codeGenerator) Generate(data any) (string, error) {
@@ -319,7 +316,7 @@ func (g *codeGenerator) Generate(data any) (string, error) {
 }
 
 //nolint:funlen
-func (g *codeGenerator) goTypeByConfigType(typ ConfigType) (result *goType) {
+func (g *codeGenerator) goTypeByConfigType(typ config.Type) (result *goType) {
 	result = &goType{
 		codeGenerator: g,
 	}
@@ -398,10 +395,10 @@ func (g *codeGenerator) goTypeByConfigType(typ ConfigType) (result *goType) {
 		commonType, ok := g.config.Types.GetTypeByName(typ.Type)
 		if ok {
 			switch typ := commonType.(type) {
-			case ConfigEnum:
+			case config.Enum:
 				result.Package = typ.Package
 				result.Type = typ.Name
-			case ConfigModel:
+			case config.Model:
 				result.Package = typ.Package
 				result.Type = typ.Name
 			}
@@ -422,11 +419,11 @@ func (g *codeGenerator) goTypeByConfigType(typ ConfigType) (result *goType) {
 
 func (g *codeGenerator) goType(val any) *goType {
 	switch val := val.(type) {
-	case ConfigType:
+	case config.Type:
 		return g.goTypeByConfigType(val)
-	case *ConfigType:
+	case *config.Type:
 		return g.goTypeByConfigType(*val)
-	case ConfigEnum:
+	case config.Enum:
 		moduleConfig := g.config.Modules[g.module].Value
 		if _, ok := moduleConfig.Types.GetTypeByName(val.Name); ok {
 			return &goType{
@@ -450,19 +447,27 @@ func (g *codeGenerator) goType(val any) *goType {
 			Package:       val.Package,
 			Type:          val.Name,
 		}
-	case *ConfigEnum:
+	case *config.Enum:
 		return g.goType(*val)
-	case *ConfigOneOfValue:
+	case *config.OneOf:
 		return g.goType(*val)
-	case ConfigOneOfValue:
+	case config.OneOf:
+		return &goType{
+			codeGenerator: g,
+			Package:       g.servicePackagePath(),
+			Type:          val.Name,
+		}
+	case *config.OneOfValue:
+		return g.goType(*val)
+	case config.OneOfValue:
 		return &goType{
 			codeGenerator: g,
 			Package:       g.servicePackagePath(),
 			Type:          val.ModelName,
 		}
-	case *ConfigModel:
+	case *config.Model:
 		return g.goType(*val)
-	case ConfigModel:
+	case config.Model:
 		return &goType{
 			codeGenerator: g,
 			Package:       g.servicePackagePath(),
@@ -492,7 +497,7 @@ func (g *codeGenerator) packageImport(name string, alias ...string) *codeGenerat
 func (g *codeGenerator) isEnum(typ *goType) bool {
 	return g.getModuleEnum(typ.Type) != nil || g.getCommonEnum(typ.Type) != nil
 }
-func (g *codeGenerator) getEnum(typ *goType) *ConfigEnum {
+func (g *codeGenerator) getEnum(typ *goType) *config.Enum {
 	if enum := g.getModuleEnum(typ.Type); enum != nil {
 		return enum
 	}
@@ -500,7 +505,7 @@ func (g *codeGenerator) getEnum(typ *goType) *ConfigEnum {
 	return g.getCommonEnum(typ.Type)
 }
 
-func (g *codeGenerator) getModel(typ *goType) *ConfigModel {
+func (g *codeGenerator) getModel(typ *goType) *config.Model {
 	if model := g.getModuleModel(typ.Type); model != nil {
 		return model
 	}
@@ -512,7 +517,7 @@ func (g *codeGenerator) isModuleEnum(typ *goType) bool {
 	return g.getModuleEnum(typ.Type) != nil
 }
 
-func (g *codeGenerator) getModuleEnum(name string) *ConfigEnum {
+func (g *codeGenerator) getModuleEnum(name string) *config.Enum {
 	moduleTypes := g.config.Modules[g.module].Value.Types
 
 	result, ok := moduleTypes.GetEnumByName(name)
@@ -523,7 +528,7 @@ func (g *codeGenerator) getModuleEnum(name string) *ConfigEnum {
 	return &result
 }
 
-func (g *codeGenerator) getModuleOneOf(name string) *ConfigOneOf {
+func (g *codeGenerator) getModuleOneOf(name string) *config.OneOf {
 	moduleTypes := g.config.Modules[g.module].Value.Types
 
 	result, ok := moduleTypes.GetOneOfByName(name)
@@ -538,7 +543,7 @@ func (g *codeGenerator) isModuleOneOf(typ *goType) bool {
 	return g.getModuleOneOf(typ.Type) != nil
 }
 
-func (g *codeGenerator) getModuleModel(name string) *ConfigModel {
+func (g *codeGenerator) getModuleModel(name string) *config.Model {
 	moduleTypes := g.config.Modules[g.module].Value.Types
 
 	result, ok := moduleTypes.GetModelByName(name)
@@ -557,7 +562,7 @@ func (g *codeGenerator) isCommonEnum(typ *goType) bool {
 	return g.getCommonEnum(typ.Type) != nil
 }
 
-func (g *codeGenerator) getCommonEnum(name string) *ConfigEnum {
+func (g *codeGenerator) getCommonEnum(name string) *config.Enum {
 	result, ok := g.config.Types.GetEnumByName(name)
 	if !ok {
 		return nil
@@ -566,7 +571,7 @@ func (g *codeGenerator) getCommonEnum(name string) *ConfigEnum {
 	return &result
 }
 
-func (g *codeGenerator) getCommonOneOf(name string) *ConfigOneOf {
+func (g *codeGenerator) getCommonOneOf(name string) *config.OneOf {
 	result, ok := g.config.Types.GetOneOfByName(name)
 	if !ok {
 		return nil
@@ -579,7 +584,7 @@ func (g *codeGenerator) isCommonOneOf(typ *goType) bool {
 	return g.getCommonOneOf(typ.Type) != nil
 }
 
-func (g *codeGenerator) getCommonModel(name string) *ConfigModel {
+func (g *codeGenerator) getCommonModel(name string) *config.Model {
 	result, ok := g.config.Types.GetModelByName(name)
 	if !ok {
 		return nil
@@ -596,7 +601,7 @@ func newCodeGenerator(
 	templateName string,
 	importsLocal string,
 	module, packageName, packagePath string,
-	config *Config,
+	config *config.Config,
 	templates []string,
 ) (*codeGenerator, error) {
 	generator := &codeGenerator{
