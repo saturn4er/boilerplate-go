@@ -67,13 +67,12 @@ func (c *Model) Init(config *Config, moduleName string) error {
 type ConfigModelFieldAdmin struct {
 	HideForList bool   `yaml:"hide_for_list"`
 	Hide        bool   `yaml:"hide"`
+	Creatable   bool   `yaml:"creatable"`
 	Editable    bool   `yaml:"editable"`
 	LinkTo      string `yaml:"link_to"`
 }
 
 func (s *ConfigModelFieldAdmin) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	s.Editable = true
-
 	type plain ConfigModelFieldAdmin
 	if err := unmarshal((*plain)(s)); err != nil {
 		return err
@@ -94,7 +93,8 @@ type ConfigModelField struct {
 
 func (c *ConfigModelField) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	c.Admin = ConfigModelFieldAdmin{
-		Editable: true,
+		Editable:  true,
+		Creatable: true,
 	}
 
 	type plain ConfigModelField

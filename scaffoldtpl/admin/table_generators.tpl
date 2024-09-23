@@ -1,7 +1,7 @@
 {
-"file_path": "{{.Module}}/{{.Module}}admin/gen.table_generators.go",
-"package_name": "{{.Module}}admin",
-"package_path": "{{.Config.RootPackageName}}/{{.Module}}/{{.Module}}",
+"file_path": "{{.Module}}/{{.Module}}storage/gen.admin_table_generators.go",
+"package_name": "{{.Module}}storage",
+"package_path": "{{.Config.RootPackageName}}/{{.Module}}/{{.Module}}storage",
 "condition": "len(Config.Modules[Module].Value.Types.Models) > 0"
 }
 <><><>
@@ -9,6 +9,9 @@
 {{ $adminContextPkg :=  import "github.com/GoAdminGroup/go-admin/context" }}
 {{ $adminDBPkg := import "github.com/GoAdminGroup/go-admin/modules/db" }}
 {{ $adminTypesPkg := import "github.com/GoAdminGroup/go-admin/template/types"}}
+{{ $formPkg := import "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"}}
+{{ $stringsPkg := import "strings" }}
+{{ $urlPkg := import "net/url" }}
 
 {{ $tablePkg :=  import "github.com/GoAdminGroup/go-admin/plugins/admin/modules/table" }}
 func NewTableGenerators() {{$tablePkg.Ref "GeneratorList"}} {
@@ -22,7 +25,7 @@ return map[string]{{$tablePkg.Ref "Generator"}}{
       {{- $pkField := $model.FirstPKField }}
       tableConfig.PrimaryKey.Type = {{ (goType $pkField.Type).GoAdminType }}
       tableConfig.PrimaryKey.Name = "{{$pkField.Name | snakeCase}}"
-      table := {{$tablePkg.Ref "NewDefaultTable"}}(tableConfig)
+      table := {{$tablePkg.Ref "NewDefaultTable"}}(ctx, tableConfig)
       info := table.GetInfo()
       formList := table.GetForm()
       info.SetTable("{{replace $model.TableName "." "\\\".\\\""}}").SetTitle("{{$model.Name}}").SetDescription("{{$model.Name}}")
@@ -72,6 +75,21 @@ return map[string]{{$tablePkg.Ref "Generator"}}{
         {{- if not $field.Admin.Editable }}
           formList.FieldDisableWhenUpdate()
         {{- end }}
+        {{- if not $field.Admin.Creatable }}
+          formList.FieldHideWhenCreate() // {{$field.Admin}}
+        {{- end }}
+        formList.PreProcessFn = func(values {{$formPkg.Ref "Values"}}) {{$formPkg.Ref "Values"}} {
+          for k, v := range values {
+          	for i, v := range v {
+          		if {{$stringsPkg.Ref "Contains"}}(v, "%") {
+          			if newV, err := {{$urlPkg.Ref "QueryUnescape"}}(v); err == nil {
+          				values[k][i] = newV
+          			}
+          		}
+          	}
+          }
+          return values
+        }
         {{- if isEnum $fieldGoType }}
           {{$enum := getEnum $fieldGoType }}
           formList.FieldOptions({{$adminTypesPkg.Ref "FieldOptions"}}{

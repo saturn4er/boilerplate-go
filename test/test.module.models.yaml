@@ -1,0 +1,24 @@
+types:
+  models:
+    - name: User
+      pk_index_name: users_pkey
+      table_name: auth.users
+      fields:
+        - { name: ID, type: uuid, filterable: true, primary_key: true }
+        - { name: Email, type: string, filterable: true }
+        - { name: PasswordHash, type: string }
+        - { name: SomeDate, type: timestamptz }
+    - name: UserOIDCAccount
+      pk_index_name: user_oidc_accounts_pkey
+      table_name: auth.user_oidc_accounts
+      fields:
+        - { name: UserID, type: uuid, filterable: true, primary_key: true }
+        - { name: Provider, type: OIDCProvider, filterable: true, primary_key: true }
+        - { name: ProviderUserID, type: string, filterable: true }
+    - name: UserRole
+      pk_index_name: user_roles_pkey
+      table_name: auth.user_roles
+      fields:
+        - { name: ID, type: int, primary_key: true }
+        - { name: UserID, type: uuid, filterable: true }
+        - { name: Role, type: Role }

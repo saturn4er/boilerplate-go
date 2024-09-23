@@ -37,6 +37,19 @@
         {{$tmpVar}} = append({{$tmpVar}}, {{$itemCopyVar}})
       }
       {{$output}} = {{$tmpVar}}
+    {{- else if $goType.IsMap }}
+      {{- $tmpVar := $varNamesGenerator.Var "tmp" }}
+      {{$tmpVar}} := make({{$goType.Ref}})
+      for k, v := range {{$input}} {
+      {{- $keyCopyVar := $varNamesGenerator.Var "keyCopy" }}
+      {{- $valueCopyVar := $varNamesGenerator.Var "valueCopy" }}
+        var {{$keyCopyVar}} {{$goType.KeyType.Ref}}
+        var {{$valueCopyVar}} {{$goType.ElemType.Ref}}
+        {{- template "copy_value" (list "k" $goType.KeyType $keyCopyVar $varNamesGenerator) }}
+        {{- template "copy_value" (list "v" $goType.ElemType $valueCopyVar $varNamesGenerator) }}
+        {{$tmpVar}}[{{$keyCopyVar}}] = {{$valueCopyVar}}
+      }
+      {{$output}} = {{$tmpVar}}
     {{- else }}
       {{$output}} = {{$input}}
     {{- end }}

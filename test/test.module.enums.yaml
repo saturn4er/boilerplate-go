@@ -1,0 +1,6 @@
+types:
+  enums:
+    - name: Role
+      values: [ User, Admin, Anonymous ]
+    - name: OIDCProvider
+      values: [ Google ]

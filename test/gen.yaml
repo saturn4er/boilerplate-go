@@ -6,4 +6,4 @@ modules:
     imports:
       - test.module.models.yaml
       - test.module.enums.yaml
-      - test.module.tx_outbox.yaml
+      - test.module.events.yaml

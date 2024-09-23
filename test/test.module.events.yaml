@@ -1,0 +1,29 @@
+types:
+  models:
+    - name: PasswordRecoveryEvent
+      storage_type: tx_outbox
+      fields:
+        - { name: ID, type: uuid, primary_key: true }
+        - { name: Data, type: PasswordRecoveryEventData }
+        - { name: IdempotencyKey, type: string }
+    - name: PasswordRecoveryRequestedEventData
+      do_not_persists: true
+      id: 100001
+      fields:
+        - { name: Email, type: string }
+        - { name: UserID, type: uuid, filterable: true }
+        - { name: VerificationCode, type: string }
+        - { name: NestedData, type: PasswordRecoveryEventData }
+    - name: PasswordRecoveryCompletedEventData
+      do_not_persists: true
+      id: 100002
+      fields:
+        - { name: Email, type: string }
+        - { name: UserID, type: uuid, filterable: true }
+
+
+  one_ofs:
+    - name: PasswordRecoveryEventData
+      values:
+        - PasswordRecoveryRequestedEventData
+        - PasswordRecoveryCompletedEventData
