@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"runtime/pprof"
 
 	"github.com/joho/godotenv"
 
@@ -12,14 +14,35 @@ import (
 )
 
 func main() {
+	//cpuProfile, err := os.Create("cpu_profile.prof")
+	//if err != nil {
+	//	fmt.Println("could not create CPU profile:", err)
+	//	return
+	//}
+	//defer cpuProfile.Close()
+	//
+	//// Start CPU profiling
+	//if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+	//	fmt.Println("could not start CPU profile:", err)
+	//	return
+	//}
+	//defer pprof.StopCPUProfile()
+
 	var (
 		dotEnvPath string
 		module     string
+		version    bool
 	)
 
 	flag.StringVar(&dotEnvPath, "dotenv", "", "path to .env file")
 	flag.StringVar(&module, "module", "", "generate specific module")
+	flag.BoolVar(&version, "version", false, "generate specific module")
 	flag.Parse()
+
+	if version {
+		log.Printf("go-scaffold version: 0.0.1\n")
+		os.Exit(0)
+	}
 
 	if dotEnvPath != "" {
 		if err := godotenv.Load(dotEnvPath); err != nil {

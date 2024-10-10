@@ -11,6 +11,7 @@
 {{- range $oneOf := $module.Types.OneOfs}}
     type {{$oneOf.Name}} interface{
       is{{$oneOf.Name}}()
+      {{ userCodeBlock (printf "%s methods" $oneOf.Name) }}
     }
     {{- range $value := $oneOf.SortedValues}}
     func (*{{$value.Value.ModelName}}) is{{$oneOf.Name}}() {}
@@ -56,6 +57,7 @@
       {{$field.Name}} {{(goType $field.Type).Ref}}
   {{- end }}
   }
+  {{ userCodeBlock (printf "%s methods" $model.Name) }}
   {{- $receiverName := slice $model.Name 0 1 | lCamelCase}}
   func ({{$receiverName}} {{$model.Name}}) Copy() {{$model.Name}} {
     var result {{$model.Name}}

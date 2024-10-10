@@ -129,6 +129,11 @@ func (g *generator) generateFile(
 ) (rerr error) {
 	log.Printf("Generating file: %v\n", filePath)
 
+	userCodeBlocks, err := g.getFileUserCodeBlocks(filePath)
+	if err != nil {
+		return fmt.Errorf("get file user code blocks: %w", err)
+	}
+
 	generator, err := newCodeGenerator(
 		templateName,
 		g.config.GoImportsLocal,
@@ -136,6 +141,7 @@ func (g *generator) generateFile(
 		packageName,
 		packagePath,
 		g.config,
+		userCodeBlocks,
 		append([]string{template}, helperTemplates...),
 	)
 	if err != nil {
@@ -172,6 +178,53 @@ func (g *generator) generateFile(
 	}
 
 	return nil
+}
+
+func (g *generator) getFileUserCodeBlocks(path string) (map[string]string, error) {
+	// user code is started with `// user code '<block name>'` and ended with `// end user code '<block name>'`
+	fileContent, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	leftFileContent := string(fileContent)
+	result := make(map[string]string)
+	for {
+		// searching for code block name start
+		codeBlockIdx := strings.Index(leftFileContent, "// user code '")
+		if codeBlockIdx == -1 {
+			break
+		}
+
+		leftFileContent = leftFileContent[codeBlockIdx+len("// user code '"):]
+		// searching for code block name
+		codeBlockIdx = strings.Index(leftFileContent, "'")
+		if codeBlockIdx == -1 {
+			break
+		}
+
+		codeBlockName := leftFileContent[:codeBlockIdx]
+
+		newLineIdx := strings.Index(leftFileContent, "\n")
+		if newLineIdx == -1 {
+			break
+		}
+		leftFileContent = leftFileContent[newLineIdx+1:]
+
+		// searching for code block end
+		codeBlockEndIdx := strings.Index(leftFileContent, fmt.Sprintf("// end user code '%s'", codeBlockName))
+		if codeBlockEndIdx == -1 {
+			break
+		}
+
+		result[codeBlockName] = leftFileContent[:codeBlockEndIdx]
+		leftFileContent = leftFileContent[codeBlockEndIdx:]
+	}
+
+	return result, nil
 }
 
 func Generate(config *config.Config, options ...optionutil.Option[generatorOptions]) error {

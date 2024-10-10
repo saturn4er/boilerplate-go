@@ -72,7 +72,7 @@
               {{$output}} = *{{$tmpVar}}
             }
         {{- else }}
-            // convert oneof to oneofdb
+            // oneof to db
             {{$tmpVar}}, err := {{template "storage.func.one_of_to_internal" $oneOf}}({{$input}})
             if err != nil {
             return nil, err
@@ -80,7 +80,7 @@
             {{$output}} = {{$tmpVar}}
         {{- end }}
     {{- else if or (isModuleEnum $inputGoType) (isCommonEnum $inputGoType) }}
-      // Enum
+      // enum to db
       {
       {{$tmpVar}}, err := {{- template "storage.func.enum_to_internal" $inputGoType.Type }}({{$input}})
       if err != nil {
@@ -109,8 +109,10 @@
         }
         {{$output}} = string({{$jsonData}})
       }
-    {{- else if or (eq $inputGoType.Type "any") $inputGoType.IsMap }}
-      // Any or map
+    {{- else if $inputGoType.IsMap }}
+      // map to db
+    {{- else if or (eq $inputGoType.Type "any") }}
+      // any to db
       {
           if {{$input}} != nil {
             {{$tmpVar}}, err := {{$jsonPkg.Ref "Marshal"}}({{$input}})
@@ -123,16 +125,18 @@
           }
       }
     {{- else if and $inputGoType.IsPtr $outputGoType.IsPtr }}
-      // Ptr
-      if {{$input}} != nil {
-      var {{$tmpVar}} {{$outputGoType.ElemType.Ref}}
-      {{- template "storage.block.convert_value_to_internal" list (print "*" $input) $inputGoType.ElemType $tmpVar $outputGoType.ElemType $varNamesGenerator}}
-      {{$output}} = &{{$tmpVar}}
-      } else {
-      {{$output}} = nil
+      {
+        // ptr to db
+        if {{$input}} != nil {
+        var {{$tmpVar}} {{$outputGoType.ElemType.Ref}}
+        {{- template "storage.block.convert_value_to_internal" list (print "*" $input) $inputGoType.ElemType $tmpVar $outputGoType.ElemType $varNamesGenerator}}
+        {{$output}} = &{{$tmpVar}}
+        } else {
+        {{$output}} = nil
+        }
       }
     {{- else if $inputGoType.IsSlice}}
-      // Slice
+      // slice to db
       {
       {{$tmpVar}} := make({{$outputGoType.Ref}}, 0, len({{$input}}))
       for _, el := range {{$input}} {
@@ -143,6 +147,7 @@
       {{$output}} = {{$tmpVar}}
       }
     {{- else if and (eq $inputGoType.Type "Time") (eq $inputGoType.Package "time") (not $inputGoType.WithTimezone)}}
+        // time to db
         {{$output}} = ({{$input}}).UTC()
     {{- else }}
         {{$output}} = {{$input}}
@@ -160,8 +165,8 @@
     {{- $tmpVar := $varNamesGenerator.Var "tmp" -}}
     {{- if isModuleOneOf $outputGoType }}
         {{- $oneOfType := getModuleOneOf $outputGoType.Type }}
-        // OneOf From DB
         {
+          // one-of from db
           {{- if and $inputGoType.IsPtr (eq $inputGoType.ElemType.Type "string")  }}
             {{$tmpVar}}, err := {{template "storage.func.one_of_string_ptr_to_service" $oneOfType}}({{$input}})
             if err != nil{
@@ -184,15 +189,17 @@
         }
     {{- else if or (isModuleEnum $outputGoType) (isCommonEnum $outputGoType) }}
       {
+      // enum from db
       {{$tmpVar}}, err := {{- template "storage.func.enum_to_service" $outputGoType.Type }}({{$input}})
       if err != nil {
       return nil, err
       }
       {{$output}} = {{$tmpVar}}
       }
-    {{- else if or (isModuleModel $outputGoType) (isCommonModel $outputGoType) (eq $outputGoType.Type "any") $outputGoType.IsMap}}
+    {{- else if or (isModuleModel $outputGoType) (isCommonModel $outputGoType) (eq $outputGoType.Type "any")}}
       {
         {{- if $inputGoType.IsPtr}}
+          // model/any ptr from db
           if {{$input}} != nil {
             var {{$tmpVar}} {{$outputGoType.Ref}}
             if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte(*{{$input}}), &{{$tmpVar}}); err !=nil{
@@ -201,6 +208,7 @@
             {{$output}} = {{$tmpVar}}
           }
         {{- else}}
+          // model/any from db
           var {{$tmpVar}} {{$outputGoType.Ref}}
           if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte({{$input}}), &{{$tmpVar}}); err !=nil{
           return nil, err
@@ -208,7 +216,13 @@
           {{$output}} = {{$tmpVar}}
         {{- end }}
       }
+    {{- else if $outputGoType.IsMap}}
+      {
+        // map from db
+        var val map[{{$outputGoType.ElemType.DBAlternative.Ref}}]{{$outputGoType.ElemType.DBAlternative.Ref}}
+      }
     {{- else if and $outputGoType.IsPtr $inputGoType.IsPtr }}
+      // ptr from map
       if {{$input}} != nil {
       var {{$tmpVar}} {{$outputGoType.ElemType.Ref}}
       {{- template "storage.block.convert_value_to_service" list (print "*" $input) $inputGoType.ElemType $tmpVar $outputGoType.ElemType $varNamesGenerator}}
@@ -216,6 +230,7 @@
       }
     {{- else if $outputGoType.IsSlice}}
       {
+          // slice from db
       {{$tmpVar}} := make({{$outputGoType.Ref}}, 0, len({{$input}}))
       for _, el := range {{$input}} {
       var res {{$outputGoType.ElemType.Ref}}
@@ -225,6 +240,7 @@
       {{$output}} = {{$tmpVar}}
       }
     {{- else}}
+        // default from db
         {{$output}} = {{$input}}
     {{- end }}
 {{- end }}

@@ -10,12 +10,12 @@
 
 type NotFoundError string
 func (n NotFoundError) Error() string {
-  return fmt.Sprintf("%s not found", string(n))
+  return {{$fmtPkg.Ref "Sprintf"}}("%s not found", string(n))
 }
 
 type AlreadyExistsError string
 func (a AlreadyExistsError) Error() string {
-  return fmt.Sprintf("%s already exists", string(a))
+  return {{$fmtPkg.Ref "Sprintf"}}("%s already exists", string(a))
 }
 
 

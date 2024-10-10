@@ -306,7 +306,7 @@ func (g *codeGenerator) Generate(data any) (string, error) {
 		TabWidth:   8,
 		Comments:   true,
 		Fragment:   true,
-		FormatOnly: false,
+		FormatOnly: true,
 	})
 	if err != nil {
 		return result, err
@@ -602,6 +602,7 @@ func newCodeGenerator(
 	importsLocal string,
 	module, packageName, packagePath string,
 	config *config.Config,
+	userCodeBlocks map[string]string,
 	templates []string,
 ) (*codeGenerator, error) {
 	generator := &codeGenerator{
@@ -638,6 +639,15 @@ func newCodeGenerator(
 			return &varNamesGenerator{
 				usedNames: make(map[string]bool),
 			}
+		},
+		"userCodeBlock": func(name string) string {
+			result := fmt.Sprintf("// user code '%s'\n", name)
+			if code, ok := userCodeBlocks[name]; ok {
+				result += code
+			}
+			result += fmt.Sprintf("// end user code '%s'", name)
+
+			return result
 		},
 		"addInts": func(values ...int) int {
 			result := 0

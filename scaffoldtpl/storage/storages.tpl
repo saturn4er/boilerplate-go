@@ -12,6 +12,7 @@
 {{ $idempotencyPkg := import "github.com/saturn4er/boilerplate-go/lib/idempotency" }}
 {{ $gormPkg := import "gorm.io/gorm" }}
 {{ $errorsPkg := import "github.com/pkg/errors" }}
+{{ $contextPkg := import "context" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
 
@@ -43,7 +44,7 @@ func (s Storages) IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}} {
     DB: s.db,
   }
 }
-func (s Storages) ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx {{$servicePkg.Ref "Storage"}}) error) error {
+func (s Storages) ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx {{$servicePkg.Ref "Storage"}}) error) error {
 return s.db.Transaction(func(tx *gorm.DB) error {
 return cb(ctx, &Storages{tx, s.logger})
 })
