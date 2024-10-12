@@ -44,7 +44,7 @@ types:
       fields:
           - { name: Value, type: string }
     - name: OneOfValue2
-      id: 1
+      id: 2
       do_not_persists: true
       fields:
         - { name: Value, type: string }

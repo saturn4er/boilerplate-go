@@ -62,8 +62,8 @@
     {{- range $value := .SortedValues }}
         {{- $dbType := (goType $value.Value.Model).InLocalPackage.WithName (print "json" (goType $value.Value.Model).Type) }}
         case *{{ (goType $value.Value).Ref }}:
-        {{$valueOutput := print "result.Val"}}
-        {{- template "storage.block.convert_value_to_internal" list "v" (goType $value.Value).Ptr $valueOutput $dbType varNamesGenerator}}
+        {{- $output := setToVarFn (print "result.Val") -}}
+        {{- template "storage.block.convert_value_to_internal" list "v" (goType $value.Value).Ptr $output $dbType varNamesGenerator}}
 
         result.OneOfType = "{{ (goType $value.Value).Ref }}"
         result.OneOfTypeID = {{$value.Index}}
@@ -94,17 +94,5 @@
     }
 
     panic("implement me")
-    }
-    func {{template "storage.func.one_of_string_ptr_to_service" .}}(val *string) ({{$goType.Ref}}, error) {
-    if val == nil || *val == "null" {
-    return nil, nil
-    }
-
-    var dbVal {{$dbTypeName}}
-    if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte(*val), &dbVal); err != nil {
-    return nil, {{$fmtPkg.Ref "Errorf"}}("unmarshal {{$dbTypeName}}: %w", err)
-    }
-
-    return {{template "storage.func.one_of_to_service" .}}(&dbVal)
     }
 {{- end }}

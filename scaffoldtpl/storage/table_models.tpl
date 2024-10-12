@@ -54,7 +54,7 @@
         {{- if $field.DoNotPersists }} {{- continue }} {{- end }}
         {{- $input := print $toArgName "." $field.Name -}}
         {{- $inputGoType := goType $field.Type -}}
-        {{- $output := print "result." $field.Name -}}
+        {{- $output := setToVarFn (print "result." $field.Name) -}}
         {{- $outputGoType := (goType $field.Type).DBAlternative -}}
 
         {{ template "storage.block.convert_value_to_internal" (list $input $inputGoType $output $outputGoType $varNamesGenerator) }}
@@ -69,7 +69,7 @@
         {{- if $field.DoNotPersists }} {{- continue }} {{- end }}
         {{- $input := print $fromArgName "." $field.Name -}}
         {{- $inputGoType := (goType $field.Type).DBAlternative -}}
-        {{- $output := print "result." $field.Name -}}
+        {{- $output := setToVarFn (print "result." $field.Name) -}}
         {{- $outputGoType := goType $field.Type -}}
         {{ template "storage.block.convert_value_to_service" (list $input $inputGoType $output $outputGoType $varNamesGenerator) }}
     {{- end }}

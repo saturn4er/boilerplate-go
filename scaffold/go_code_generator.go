@@ -92,6 +92,15 @@ func (g goType) GoAdminType() string {
 
 	return dbImport.Ref("Text")
 }
+
+func (g goType) IsSimple() bool {
+	switch g.Type {
+	case "string", "int", "int16", "int32", "int64", "uint", "uint16", "uint32", "uint64", "float32", "float64", "bool":
+		return true
+	}
+
+	return false
+}
 func (g goType) GormType() string {
 	switch {
 	case g.IsSlice:
@@ -718,9 +727,14 @@ func newCodeGenerator(
 		"receiverName": func(name string) string {
 			return strings.ToLower(name[:1])
 		},
-		"putToVarFn": func(varName string) func(val string) string {
+		"setToVarFn": func(varName string) func(val string) string {
 			return func(val string) string {
 				return varName + " = " + val
+			}
+		},
+		"setToNewVarFn": func(varName string) func(val string) string {
+			return func(val string) string {
+				return varName + " := " + val
 			}
 		},
 		"appendFn": func(slice string) func(val string) string {
@@ -736,6 +750,11 @@ func newCodeGenerator(
 		"derefFn": func() func(val string) string {
 			return func(val string) string {
 				return "*" + val
+			}
+		},
+		"putToMapFn": func(mapName, key string) func(val string) string {
+			return func(val string) string {
+				return mapName + "[" + key + "] = " + val
 			}
 		},
 		"chainFn": func(fns ...func(string) string) func(string) string {

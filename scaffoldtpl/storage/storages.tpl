@@ -11,7 +11,9 @@
 {{ $txoutboxPkg := import "github.com/saturn4er/boilerplate-go/lib/txoutbox" }}
 {{ $idempotencyPkg := import "github.com/saturn4er/boilerplate-go/lib/idempotency" }}
 {{ $gormPkg := import "gorm.io/gorm" }}
+{{ $clausePkg := import "gorm.io/gorm/clause" }}
 {{ $errorsPkg := import "github.com/pkg/errors" }}
+{{ $pgconnPkg := import "github.com/jackc/pgx/v5/pgconn"}}
 {{ $contextPkg := import "context" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
@@ -77,11 +79,31 @@ return &Storages{db: db, logger: logger}
         return {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
         Logger: logger,
         DB: db,
-        DBErrorsWrapper:       {{template "storage.func.errors_wrapper" $model.Name}},
+        DBErrorsWrapper:       func(err error) error {
+          if err == nil{
+            return nil
+          }
+
+        if {{$errorsPkg.Ref "Is"}}(err, {{$gormPkg.Ref "ErrRecordNotFound"}}) {
+          return {{$servicePkg.Ref (printf "Err%sNotFound" $model.Name)}}
+        }
+
+        var pgErr *{{$pgconnPkg.Ref "PgError"}}
+
+        if {{$errorsPkg.Ref "As"}}(err, &pgErr) {
+          if pgErr.Code == "23505" {
+            return {{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}
+          }
+        }
+
+         {{ userCodeBlock (printf "%s errors mapping" $model.Name) }}
+
+          return err
+        },
         ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
         ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
         BuildFilterExpression: {{template "storage.func.build_db_filter" $model.Name}},
-        FieldMapping:          map[any]clause.Column{
+        FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
         {{- range $field := $model.Fields }}
             {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
         {{- end}}
