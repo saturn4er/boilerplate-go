@@ -18,20 +18,20 @@ type ConfigModelAdmin struct {
 }
 
 type Model struct {
-	ID                 uint               `yaml:"id"`
-	Admin              ConfigModelAdmin   `yaml:"admin"`
-	Package            string             `yaml:"package"`
-	StorageType        ModelStorageType   `yaml:"storage_type"`
-	Name               string             `yaml:"name"`
-	Fields             []ConfigModelField `yaml:"fields"`
-	PluralName         string             `yaml:"plural_name"`
-	DoNotPersists      bool               `yaml:"do_not_persists"`
-	HasCustomDBMethods bool               `yaml:"has_custom_db_methods"`
-	TableName          string             `yaml:"table_name"`
+	ID                 uint             `yaml:"id"`
+	Admin              ConfigModelAdmin `yaml:"admin"`
+	Package            string           `yaml:"package"`
+	StorageType        ModelStorageType `yaml:"storage_type"`
+	Name               string           `yaml:"name"`
+	Fields             []ModelField     `yaml:"fields"`
+	PluralName         string           `yaml:"plural_name"`
+	DoNotPersists      bool             `yaml:"do_not_persists"`
+	HasCustomDBMethods bool             `yaml:"has_custom_db_methods"`
+	TableName          string           `yaml:"table_name"`
 }
 
-func (c *Model) FirstPKField() ConfigModelField {
-	var idField *ConfigModelField
+func (c *Model) FirstPKField() ModelField {
+	var idField *ModelField
 	for _, field := range c.Fields {
 		if field.PrimaryKey == true {
 			return field
@@ -81,7 +81,7 @@ func (s *ConfigModelFieldAdmin) UnmarshalYAML(unmarshal func(interface{}) error)
 	return nil
 }
 
-type ConfigModelField struct {
+type ModelField struct {
 	Name          string                `yaml:"name"`
 	DBName        string                `yaml:"database_name"`
 	Type          Type                  `yaml:"type"`
@@ -91,13 +91,13 @@ type ConfigModelField struct {
 	Admin         ConfigModelFieldAdmin `yaml:"admin"`
 }
 
-func (c *ConfigModelField) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *ModelField) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	c.Admin = ConfigModelFieldAdmin{
 		Editable:  true,
 		Creatable: true,
 	}
 
-	type plain ConfigModelField
+	type plain ModelField
 	if err := unmarshal((*plain)(c)); err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (c *ConfigModelField) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	return nil
 }
 
-func (c *ConfigModelField) Init(config *Config, moduleName string) error {
+func (c *ModelField) Init(config *Config, moduleName string) error {
 	if c.DBName == "" {
 		c.DBName = strcase.SnakeCase(c.Name)
 	}

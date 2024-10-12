@@ -74,6 +74,8 @@ func loadTemplatesFromDir(fs embed.FS, dir string) ([]generatorTemplate, error) 
 			return nil, fmt.Errorf("template '%v' does not contain header separated by template with <><><>", entry.Name())
 		}
 
+		newLinesInHeader := strings.Count(tplContentParts[0], "\n")
+
 		var header struct {
 			FilePath    string `json:"file_path"`
 			PackageName string `json:"package_name"`
@@ -129,7 +131,7 @@ func loadTemplatesFromDir(fs embed.FS, dir string) ([]generatorTemplate, error) 
 			PackagePathTemplate: packagePathTemplate,
 			Condition:           condition,
 			TemplatePath:        entryPath,
-			FileTemplate:        tplContentParts[1],
+			FileTemplate:        strings.Repeat("\n", newLinesInHeader) + tplContentParts[1],
 			HelperTemplates:     helperTemplates,
 		})
 	}

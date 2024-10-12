@@ -8,6 +8,7 @@
 {{ $dbutil := import "github.com/saturn4er/boilerplate-go/lib/dbutil" }}
 {{ $idempotencyPkg := import "github.com/saturn4er/boilerplate-go/lib/idempotency" }}
 {{ $txoutboxPkg := import "github.com/saturn4er/boilerplate-go/lib/txoutbox" }}
+{{ $contextPkg := import "context" }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
 
 type Storage interface {
@@ -22,7 +23,7 @@ type Storage interface {
     {{- end }}
 {{- end }}
 IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}}
-ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx Storage) error) error
+ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx Storage) error) error
 }
 
 {{- range $model := $module.Types.Models }}

@@ -78,8 +78,8 @@ return &Storages{db: db, logger: logger}
         Logger: logger,
         DB: db,
         DBErrorsWrapper:       {{template "storage.func.errors_wrapper" $model.Name}},
-        ConvertToInternal:     {{template "storage.func.model_to_internal" $model.Name}},
-        ConvertToExternal:     {{template "storage.func.model_to_service" $model.Name}},
+        ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
+        ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
         BuildFilterExpression: {{template "storage.func.build_db_filter" $model.Name}},
         FieldMapping:          map[any]clause.Column{
         {{- range $field := $model.Fields }}

@@ -118,45 +118,55 @@ func (g goType) DBAlternative() *goType {
 	case g.IsSlice:
 		return &goType{
 			codeGenerator: g.codeGenerator,
-			ElemType: &goType{
-				codeGenerator: g.codeGenerator,
-				Type:          "string",
+			Type:          "sliceValue",
+			TypeParameters: []goType{
+				*g.ElemType.DBAlternative(),
 			},
-			Package: "github.com/lib/pq",
-			Type:    "StringArray",
+			ElemType: g.ElemType.DBAlternative(),
+			Package:  g.codeGenerator.storagePackagePath(),
 		}
 	case g.IsMap:
 		return &goType{
 			codeGenerator: g.codeGenerator,
-			ElemType: &goType{
-				codeGenerator: g.codeGenerator,
-				Type:          "string",
+			Type:          "mapValue",
+			TypeParameters: []goType{
+				*g.KeyType.DBAlternative(),
+				*g.ElemType.DBAlternative(),
 			},
-			IsPtr: true,
+			KeyType:  g.KeyType.DBAlternative(),
+			ElemType: g.ElemType.DBAlternative(),
+			Package:  g.codeGenerator.storagePackagePath(),
 		}
 
 	case g.IsPtr:
+		if g.codeGenerator.isModuleOneOf(g.ElemType) {
+			return g.ElemType.DBAlternative() // one of db alternative is already a pointer
+		}
+		if strings.ToLower(g.ElemType.Type) == "any" {
+			return g.ElemType.DBAlternative() // any is already a pointer
+		}
 		return &goType{
 			codeGenerator: g.codeGenerator,
 			IsPtr:         true,
 			ElemType:      g.ElemType.DBAlternative(),
 		}
-	default:
-		if g.codeGenerator.isModuleOneOf(&g) {
-			return &goType{
+	case g.codeGenerator.isCommonModel(&g),
+		g.codeGenerator.isModuleModel(&g):
+		return g.InPackage(g.codeGenerator.storagePackagePath()).WithName("json" + g.Type)
+	case g.codeGenerator.isModuleOneOf(&g):
+		return g.InPackage(g.codeGenerator.storagePackagePath()).WithName("json" + g.Type).Ptr()
+	case g.Type == "any":
+		return &goType{
+			codeGenerator: g.codeGenerator,
+			IsPtr:         true,
+			ElemType: &goType{
 				codeGenerator: g.codeGenerator,
-				IsPtr:         true,
-				ElemType: &goType{
-					codeGenerator: g.codeGenerator,
-					Type:          "string",
-				},
-			}
+				Type:          "string",
+			},
 		}
-		if g.codeGenerator.isCommonModel(&g) ||
-			g.codeGenerator.isModuleModel(&g) ||
-			g.codeGenerator.isCommonEnum(&g) ||
-			g.codeGenerator.isModuleEnum(&g) ||
-			g.Type == "any" {
+	default:
+		if g.codeGenerator.isCommonEnum(&g) ||
+			g.codeGenerator.isModuleEnum(&g) {
 			return &goType{
 				codeGenerator: g.codeGenerator,
 				Type:          "string",
@@ -167,16 +177,43 @@ func (g goType) DBAlternative() *goType {
 	}
 }
 
-func (g goType) InLocalPackage() *goType {
-	g.Package = g.codeGenerator.packagePath
+func (g *goType) copy() *goType {
+	if g == nil {
+		return nil
+	}
+	return &goType{
+		codeGenerator: g.codeGenerator,
+		Package:       g.Package,
+		Type:          g.Type,
+		ElemType:      g.ElemType.copy(),
+		KeyType:       g.KeyType.copy(),
+		WithTimezone:  g.WithTimezone,
+		IsPtr:         g.IsPtr,
+		IsOneOf:       g.IsOneOf,
+		IsSlice:       g.IsSlice,
+		IsMap:         g.IsMap,
+		TypeParameters: lo.Map(g.TypeParameters, func(t goType, index int) goType {
+			return lo.FromPtr(t.copy())
+		}),
+	}
+}
 
-	return &g
+func (g goType) InPackage(pkg string) *goType {
+	result := g.copy()
+	result.Package = pkg
+
+	return result
+}
+
+func (g goType) InLocalPackage() *goType {
+	return g.InPackage(g.codeGenerator.packagePath)
 }
 
 func (g goType) WithName(name string) *goType {
-	g.Type = name
+	result := g.copy()
+	result.Type = name
 
-	return &g
+	return result
 }
 
 func (g goType) Ptr() *goType {
@@ -277,6 +314,7 @@ type codeGenerator struct {
 	imports        []codeGeneratorImport
 	template       *template.Template
 	config         *config.Config
+	userCodeBlocks map[string]string
 }
 
 func (g *codeGenerator) Generate(data any) (string, error) {
@@ -482,6 +520,10 @@ func (g *codeGenerator) servicePackagePath() string {
 	return fmt.Sprintf("%s/%s/%sservice", g.config.RootPackageName, g.module, g.module)
 }
 
+func (g *codeGenerator) storagePackagePath() string {
+	return fmt.Sprintf("%s/%s/%sstorage", g.config.RootPackageName, g.module, g.module)
+}
+
 func (g *codeGenerator) packageImport(name string, alias ...string) *codeGeneratorImport {
 	result := &codeGeneratorImport{
 		generator:  g,
@@ -597,6 +639,25 @@ func (g *codeGenerator) isCommonModel(typ *goType) bool {
 	return g.getCommonModel(typ.Type) != nil
 }
 
+func (g *codeGenerator) userCodeBlock(name string) string {
+	result := fmt.Sprintf("// user code '%s'\n", name)
+	if code, ok := g.userCodeBlocks[name]; ok {
+		result += code
+	}
+	result += fmt.Sprintf("// end user code '%s'", name)
+
+	return result
+}
+
+func (g *codeGenerator) include(tpl string, context any) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	if err := g.template.ExecuteTemplate(buf, tpl, context); err != nil {
+		return "", fmt.Errorf("execute template %s: %w", tpl, err)
+	}
+
+	return buf.String(), nil
+}
+
 func newCodeGenerator(
 	templateName string,
 	importsLocal string,
@@ -611,6 +672,7 @@ func newCodeGenerator(
 		module:         module,
 		packageName:    packageName,
 		packagePath:    packagePath,
+		userCodeBlocks: userCodeBlocks,
 		config:         config,
 	}
 	textTemplate := template.New(templateName).Funcs(template.FuncMap{
@@ -640,15 +702,7 @@ func newCodeGenerator(
 				usedNames: make(map[string]bool),
 			}
 		},
-		"userCodeBlock": func(name string) string {
-			result := fmt.Sprintf("// user code '%s'\n", name)
-			if code, ok := userCodeBlocks[name]; ok {
-				result += code
-			}
-			result += fmt.Sprintf("// end user code '%s'", name)
-
-			return result
-		},
+		"userCodeBlock": generator.userCodeBlock,
 		"addInts": func(values ...int) int {
 			result := 0
 			for _, value := range values {
@@ -657,11 +711,41 @@ func newCodeGenerator(
 
 			return result
 		},
+		"include": generator.include,
 		"list": func(vals ...interface{}) []interface{} {
 			return vals
 		},
 		"receiverName": func(name string) string {
 			return strings.ToLower(name[:1])
+		},
+		"putToVarFn": func(varName string) func(val string) string {
+			return func(val string) string {
+				return varName + " = " + val
+			}
+		},
+		"appendFn": func(slice string) func(val string) string {
+			return func(val string) string {
+				return slice + " = append(" + slice + ", " + val + ")"
+			}
+		},
+		"takePtrFn": func() func(val string) string {
+			return func(val string) string {
+				return "&" + val
+			}
+		},
+		"derefFn": func() func(val string) string {
+			return func(val string) string {
+				return "*" + val
+			}
+		},
+		"chainFn": func(fns ...func(string) string) func(string) string {
+			return func(val string) string {
+				for _, fn := range fns {
+					val = fn(val)
+				}
+
+				return val
+			}
 		},
 	})
 

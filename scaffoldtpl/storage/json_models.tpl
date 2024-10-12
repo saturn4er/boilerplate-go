@@ -1,5 +1,5 @@
 {
-"file_path": "{{.Module}}/{{.Module}}storage/gen.models.go",
+"file_path": "{{.Module}}/{{.Module}}storage/gen.json_models.go",
 "package_name": "{{.Module}}storage",
 "package_path": "{{.Config.RootPackageName}}/{{.Module}}/{{.Module}}storage",
 "condition": "len(Config.Modules[Module].Value.Types.Models) > 0"
@@ -28,52 +28,53 @@
 
     {{- $servicePtrType := $modelGoType.Ptr -}}
     {{- $servicePtrTypeRef := $servicePtrType.Ref -}}
-    {{- $dbType := $modelGoType.InLocalPackage.WithName (print "db" $modelGoType.Type)  -}}
     {{- $jsonType := $modelGoType.InLocalPackage.WithName (print "json" $modelGoType.Type)  -}}
-    {{- $dbTypeRef := $dbType.Ref -}}
-    {{- $dbPtrType := $dbType.Ptr -}}
-    {{- $dbPtrTypeRef := print $dbPtrType.Ref -}}
+    {{- $jsonTypeName := $jsonType.Type }}
     {{- $varNamesGenerator := varNamesGenerator }}
-
-    type {{$dbType.Ref}} struct {
-    {{- range $field := $model.Fields}}
-        {{- if not $field.DoNotPersists }}
-            {{- $fieldType := (goType $field.Type).DBAlternative }}
-            {{$field.Name}} {{(goType $field.Type).DBAlternative.Ref}} {{ template "fieldGormTag" $field }}
-        {{- end }}
-    {{- end }}
-    }
+    {{- $receiverName := $model.Name | receiverName }}
 
     type {{$jsonType.Ref}} struct {
     {{- range $field := $model.Fields}}
+
         {{- if not $field.DoNotPersists }}
             {{- $fieldType := (goType $field.Type).DBAlternative }}
-            {{$field.Name}} {{(goType $field.Type).DBAlternative.Ref}}
+            {{ template "storage.field.json_model" $field }} {{(goType $field.Type).DBAlternative.Ref}} `json:"{{$field.Name | snakeCase}}"`
         {{- end }}
     {{- end }}
     }
 
+    func ({{$receiverName}} *{{$jsonTypeName}}) Scan(value any) error {
+    return {{$jsonPkg.Ref "Unmarshal"}}(value.([]byte), {{$receiverName}})
+    }
+
+    func ({{$receiverName}} {{$jsonTypeName}}) Value() ({{$driverPkg.Ref "Value"}}, error) {
+    return {{$jsonPkg.Ref "Marshal"}}({{$receiverName}})
+    }
+
     {{ $toArgName := "src" }}
-    func {{ template "storage.func.model_to_internal" $model.Name}}({{$toArgName}} {{$servicePtrTypeRef}}) ({{$dbPtrTypeRef}}, error){
-    result := &{{$dbTypeRef}}{}
-    {{- range $field := $model.Fields }}
+    func {{ template "storage.func.json_model_to_internal" $model.Name}}({{$toArgName}} {{$servicePtrTypeRef}}) (*{{$jsonType.Ref}}, error){
+      result := &{{$jsonType.Ref}}{}
+      {{- range $field := $model.Fields }}
         {{- if $field.DoNotPersists }} {{- continue }} {{- end }}
         {{- $input := print $toArgName "." $field.Name -}}
         {{- $inputGoType := goType $field.Type -}}
-        {{- $output := print "result." $field.Name -}}
+        {{- $dbFieldName := include "storage.field.json_model" $field -}}
+        {{- $output := print "result." $dbFieldName -}}
         {{- $outputGoType := (goType $field.Type).DBAlternative -}}
 
         {{ template "storage.block.convert_value_to_internal" (list $input $inputGoType $output $outputGoType $varNamesGenerator) }}
-    {{- end }}
+      {{- end }}
     return result, nil
     }
 
     {{ $fromArgName := "src" }}
-    func {{template "storage.func.model_to_service" $model.Name}}({{$fromArgName}} {{$dbPtrTypeRef}}) ({{$servicePtrTypeRef}}, error){
+    func {{template "storage.func.json_model_to_service" $model.Name}}({{$fromArgName}} *{{$jsonType.Ref}}) ({{$servicePtrTypeRef}}, error){
     result := &{{$modelGoType.Ref}}{}
     {{- range $field := $model.Fields }}
+        //{{$field.Name}}
         {{- if $field.DoNotPersists }} {{- continue }} {{- end }}
-        {{- $input := print $fromArgName "." $field.Name -}}
+        {{- $dbFieldName := include "storage.field.json_model" $field -}}
+        {{- $input := print $fromArgName "." $dbFieldName -}}
         {{- $inputGoType := (goType $field.Type).DBAlternative -}}
         {{- $output := print "result." $field.Name -}}
         {{- $outputGoType := goType $field.Type -}}
@@ -81,12 +82,4 @@
     {{- end }}
     return result, nil
     }
-    {{- if $model.DoNotPersists }}
-      {{continue}}
-    {{- end }}
-    {{- if $model.TableName }}
-      func (a {{$dbTypeRef}}) TableName() string {
-      return "{{$model.TableName}}"
-      }
-    {{- end }}
 {{- end}}

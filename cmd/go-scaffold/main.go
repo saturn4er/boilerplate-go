@@ -2,10 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"runtime/pprof"
 
 	"github.com/joho/godotenv"
 

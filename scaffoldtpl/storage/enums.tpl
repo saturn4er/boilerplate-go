@@ -8,6 +8,7 @@
 
 {{ $dbutil := import "github.com/saturn4er/boilerplate-go/lib/dbutil" }}
 {{ $clause := import "gorm.io/gorm/clause" }}
+{{ $fmtPkg := import "fmt" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") }}
 
 {{ $module := (index $.Config.Modules $.Module).Value}}
@@ -20,6 +21,7 @@
   )
 {{- end }}
 {{- define "storage.enum.to_db_converter"}}
+  {{ $fmtPkg := import "fmt" }}
   {{- $enumGoType := goType . -}}
   {{- $enumPkg := $enumGoType.PackageImport -}}
   {{ $argName := print (.Name| lCamelCase) "Value" }}
@@ -30,13 +32,14 @@
     {{- end }}
     }[{{$argName}}]
     if !ok {
-      return "", fmt.Errorf("unknown {{.Name}} value: %d", {{$argName}})
+      return "", {{$fmtPkg.Ref "Errorf"}}("unknown {{.Name}} value: %d", {{$argName}})
     }
     return result, nil
   }
 {{- end}}
 
 {{- define "storage.enum.from_db_converter"}}
+    {{ $fmtPkg := import "fmt" }}
     {{- $enumGoType := goType . }}
     {{- $enumPkg := $enumGoType.PackageImport }}
     {{- $argName := print (.Name| lCamelCase) "Value" }}
@@ -47,7 +50,7 @@
     {{- end }}
     }[{{$argName}}]
     if !ok {
-    return 0, fmt.Errorf("unknown {{.Name}} db value: %s", {{$argName}})
+    return 0, {{$fmtPkg.Ref "Errorf"}}("unknown {{.Name}} db value: %s", {{$argName}})
     }
     return result, nil
     }
