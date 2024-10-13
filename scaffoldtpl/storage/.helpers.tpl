@@ -186,7 +186,6 @@
     {{- $tmpVar := $varNamesGenerator.Var "tmp" -}}
     {{- if isModuleOneOf $outputGoType }}
         {{- $oneOfType := getModuleOneOf $outputGoType.Type }}
-        // one-of from db
         {{$tmpVar}}, err := {{template "storage.func.one_of_to_service" $oneOfType}}({{$input}})
         if err != nil {
         return nil, {{$fmtPkg.Ref "Errorf"}}("convert {{$oneOfType.Name}} to service type: %w", err)
@@ -195,7 +194,6 @@
     {{- else if and $outputGoType.IsPtr (isModuleOneOf $outputGoType.ElemType) }}
         if({{$input}} != nil){
           {{- $oneOfType := getModuleOneOf $outputGoType.ElemType.Type }}
-          // one-of from db
           {{$tmpVar}}, err := {{template "storage.func.one_of_to_service" $oneOfType}}({{$input}})
           if err != nil {
           return nil, {{$fmtPkg.Ref "Errorf"}}("convert {{$oneOfType.Name}} to service type: %w", err)
@@ -205,7 +203,6 @@
           {{call $output "nil"}}
         }
     {{- else if or (isModuleEnum $outputGoType) (isCommonEnum $outputGoType) }}
-      // enum from db
       {{$tmpVar}}, err := {{- template "storage.func.enum_to_service" $outputGoType.Type }}({{$input}})
       if err != nil {
       return nil, err
@@ -237,7 +234,6 @@
       }
     {{- else if (eq $outputGoType.Type "any")}}
         {{- if $inputGoType.IsPtr}}
-          // model/any ptr from db
           if {{$input}} != nil {
           var {{$tmpVar}} {{$outputGoType.Ref}}
           if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte(*{{$input}}), &{{$tmpVar}}); err !=nil{
@@ -248,7 +244,6 @@
           {{call $output "nil"}}
           }
         {{- else}}
-          // model/any from db
           var {{$tmpVar}} {{$outputGoType.Ref}}
           if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte({{$input}}), &{{$tmpVar}}); err !=nil{
           return nil, err
@@ -256,7 +251,6 @@
           {{call $output $tmpVar}}
         {{- end }}
     {{- else if $outputGoType.IsMap}}
-      // map from db
       {{$tmpVar}} := make(map[{{$outputGoType.KeyType.Ref}}]{{$outputGoType.ElemType.Ref}}, len({{$input}}))
       {{- $kVar := $varNamesGenerator.Var "k"}}
       {{- $vVar := $varNamesGenerator.Var "v"}}
@@ -275,7 +269,6 @@
       }
       {{call $output $tmpVar}}
     {{- else if $outputGoType.IsSlice}}
-      // slice from db
       {{$tmpVar}} := make({{$outputGoType.Ref}}, 0, len({{$input}}))
       for _, el := range {{$input}} {
       {{$itemOutput := appendFn $tmpVar}}
