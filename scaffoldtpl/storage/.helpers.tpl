@@ -103,7 +103,7 @@
           {{call $output (print "*" $tmpVar)}}
     {{- else if and $inputGoType.IsPtr (or (isModuleModel $inputGoType.ElemType) (isCommonModel $inputGoType.ElemType)) }}
       if {{$input}} != nil {
-        {{$model := getModel $inputGoType.ElemType}}
+        {{- $model := getModel $inputGoType.ElemType}}
         {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}({{$input}})
         if err!=nil {
         return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
@@ -256,14 +256,14 @@
       {{- $vVar := $varNamesGenerator.Var "v"}}
       for {{$kVar}}, {{$vVar}} := range {{$input}} {
         {{- if $inputGoType.KeyType.IsSimple }}
-            {{ $valueOutput := putToMapFn $tmpVar $kVar}}
+            {{- $valueOutput := putToMapFn $tmpVar $kVar}}
             {{- template "storage.block.convert_value_to_service" list $vVar $inputGoType.ElemType $valueOutput $outputGoType.ElemType $varNamesGenerator}}
         {{- else }}
           {{- $kResultVar := $varNamesGenerator.Var "kResult"}}
-          {{ $keyOutput := setToNewVarFn $kResultVar}}
+          {{- $keyOutput := setToNewVarFn $kResultVar}}
           {{- template "storage.block.convert_value_to_service" list $kVar $inputGoType.KeyType $keyOutput $outputGoType.KeyType $varNamesGenerator}}
           {{- $vResultVar := $varNamesGenerator.Var "vResult"}}
-          {{ $valueOutput := putToMapFn $tmpVar $kResultVar}}
+          {{- $valueOutput := putToMapFn $tmpVar $kResultVar}}
           {{- template "storage.block.convert_value_to_service" list $vVar $inputGoType.ElemType $valueOutput $outputGoType.ElemType $varNamesGenerator}}
         {{- end }}
       }
