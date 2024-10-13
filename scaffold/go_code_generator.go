@@ -353,7 +353,7 @@ func (g *codeGenerator) Generate(data any) (string, error) {
 		TabWidth:   8,
 		Comments:   true,
 		Fragment:   true,
-		FormatOnly: true,
+		FormatOnly: false,
 	})
 	if err != nil {
 		return result, err
@@ -744,12 +744,12 @@ func newCodeGenerator(
 		},
 		"takePtrFn": func() func(val string) string {
 			return func(val string) string {
-				return "&" + val
+				return "toPtr(" + val + ")"
 			}
 		},
 		"derefFn": func() func(val string) string {
 			return func(val string) string {
-				return "*" + val
+				return "fromPtr(" + val + ")"
 			}
 		},
 		"putToMapFn": func(mapName, key string) func(val string) string {

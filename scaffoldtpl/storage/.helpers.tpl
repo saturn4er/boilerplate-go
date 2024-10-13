@@ -95,19 +95,23 @@
       }
       {{call $output $tmpVar}}
     {{- else if or (isModuleModel $inputGoType) (isCommonModel $inputGoType) }}
-        {{- $model := getModel $inputGoType }}
-        {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}(&{{$input}})
-        if err!=nil {
-        return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
-        }
-        {{call $output (print "*" $tmpVar)}}
+          {{- $model := getModel $inputGoType }}
+          {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}(toPtr({{$input}}))
+          if err!=nil {
+          return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
+          }
+          {{call $output (print "*" $tmpVar)}}
     {{- else if and $inputGoType.IsPtr (or (isModuleModel $inputGoType.ElemType) (isCommonModel $inputGoType.ElemType)) }}
+      if {{$input}} != nil {
         {{$model := getModel $inputGoType.ElemType}}
         {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}({{$input}})
         if err!=nil {
         return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
         }
         {{call $output $tmpVar}}
+        } else {
+        {{call $output "nil"}}
+        }
     {{- else if $inputGoType.IsMap }}
       {{$tmpVar}} := make({{$outputGoType.Ref}}, len({{$input}}))
       {{- $kVar := $varNamesGenerator.Var "k"}}
@@ -127,26 +131,26 @@
       }
       {{call $output $tmpVar}}
     {{- else if eq $inputGoType.Type "any" }}
-      if {{$input}} == nil {
+      if {{$input}} != nil {
       {{$tmpVar}}, err := {{$jsonPkg.Ref "Marshal"}}({{$input}})
       if err !=nil{
       return nil, err
       }
       {{$tmpVar2 := $varNamesGenerator.Var "marshaledValue"}}
       {{$tmpVar2}} := string({{$tmpVar}})
-      {{call $output (print "&" $tmpVar2)}}
+      {{call $output (print "toPtr(" $tmpVar2 ")")}}
       }else{
       {{call $output "nil"}}
       }
     {{- else if and $inputGoType.IsPtr (eq $inputGoType.ElemType.Type "any") }}
-      if {{$input}} != nil && *{{$input}} != nil {
+      if {{$input}} != nil && fromPtr({{$input}}) != nil {
       {{$tmpVar}}, err := {{$jsonPkg.Ref "Marshal"}}(*{{$input}})
       if err !=nil{
       return nil, err
       }
       {{$tmpVar2 := $varNamesGenerator.Var "marshaledValue"}}
       {{$tmpVar2}} := string({{$tmpVar}})
-      {{call $output (print "&" $tmpVar2)}}
+      {{call $output (print "toPtr(" $tmpVar2 ")")}}
       }else{
       {{call $output "nil"}}
       }
@@ -155,7 +159,7 @@
       {{call $output "nil"}}
       }else{
       {{- $localOutput := chainFn takePtrFn $output}}
-      {{- template "storage.block.convert_value_to_internal" list (print "*" $input) $inputGoType.ElemType $localOutput $outputGoType.ElemType $varNamesGenerator}}
+      {{- template "storage.block.convert_value_to_internal" list (print "fromPtr(" $input ")") $inputGoType.ElemType $localOutput $outputGoType.ElemType $varNamesGenerator}}
       }
     {{- else if $inputGoType.IsSlice}}
       {{$tmpVar}} := make({{$outputGoType.Ref}}, 0, len({{$input}}))
@@ -196,7 +200,9 @@
           if err != nil {
           return nil, {{$fmtPkg.Ref "Errorf"}}("convert {{$oneOfType.Name}} to service type: %w", err)
           }
-          {{call $output (print "&" $tmpVar)}}
+          {{call $output (print "toPtr(" $tmpVar ")")}}
+        } else {
+          {{call $output "nil"}}
         }
     {{- else if or (isModuleEnum $outputGoType) (isCommonEnum $outputGoType) }}
       // enum from db
@@ -206,12 +212,12 @@
       }
       {{call $output $tmpVar}}
     {{- else if or (isModuleModel $outputGoType) (isCommonModel $outputGoType) }}
-        {{$tmpVar}}, err := {{- template "storage.func.json_model_to_service" $outputGoType.Type }}(&{{$input}})
+        {{$tmpVar}}, err := {{- template "storage.func.json_model_to_service" $outputGoType.Type }}(toPtr({{$input}}))
         if err != nil{
         return nil, err
         }
 
-        {{call $output (print "*" $tmpVar)}}
+        {{call $output (print "fromPtr(" $tmpVar ")")}}
     {{- else if and $outputGoType.IsPtr (or (isModuleModel $outputGoType.ElemType) (isCommonModel $outputGoType.ElemType)) }}
         if {{$input}} != nil {
           {{$tmpVar}}, err := {{- template "storage.func.json_model_to_service" $outputGoType.ElemType.Type }}({{$input}})
@@ -227,7 +233,7 @@
         {{call $output "nil"}}
       }else{
       {{- $localOutput := chainFn takePtrFn $output}}
-      {{- template "storage.block.convert_value_to_service" list (print "*" $input) $inputGoType.ElemType $localOutput $outputGoType.ElemType $varNamesGenerator}}
+      {{- template "storage.block.convert_value_to_service" list (print "fromPtr(" $input ")") $inputGoType.ElemType $localOutput $outputGoType.ElemType $varNamesGenerator}}
       }
     {{- else if (eq $outputGoType.Type "any")}}
         {{- if $inputGoType.IsPtr}}
@@ -238,6 +244,8 @@
           return nil, err
           }
           {{call $output $tmpVar}}
+          }else {
+          {{call $output "nil"}}
           }
         {{- else}}
           // model/any from db

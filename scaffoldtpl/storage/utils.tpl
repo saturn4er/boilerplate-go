@@ -54,3 +54,11 @@ return err
 
 return nil
 }
+
+func fromPtr[T any](ptr *T) T {
+  return *ptr
+}
+
+func toPtr[T any](val T) *T {
+  return &val
+}

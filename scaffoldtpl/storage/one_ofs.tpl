@@ -64,9 +64,10 @@
         case *{{ (goType $value.Value).Ref }}:
         {{- $output := setToVarFn (print "result.Val") -}}
         {{- template "storage.block.convert_value_to_internal" list "v" (goType $value.Value).Ptr $output $dbType varNamesGenerator}}
-
-        result.OneOfType = "{{ (goType $value.Value).Ref }}"
+        result.OneOfType = "{{ (goType $value.Value).InLocalPackage.Ref }}"
         result.OneOfTypeID = {{$value.Index}}
+
+        return result, nil
     {{- end }}
     }
     return nil, {{$fmtPkg.Ref "Errorf"}}("invalid {{.Name}} value type: %T", val)
