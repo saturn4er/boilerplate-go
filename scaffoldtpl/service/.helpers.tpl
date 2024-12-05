@@ -54,3 +54,63 @@
       {{$output}} = {{$input}}
     {{- end }}
 {{- end }}
+
+
+{{- define "equals_value" }}
+    {{- $aVal := index . 0 -}}
+    {{- $goType := index . 1 -}}
+    {{- $bVal := index . 2 -}}
+    {{- $varNamesGenerator := index . 3 -}}
+    {{- if isModuleOneOf $goType}}
+        {{- $oneOf := getModuleOneOf $goType.Type }}
+        if !{{$aVal}}.{{$oneOf.Name}}Equals({{$bVal}}){
+          return false
+        }
+    {{- else if or (isModuleModel $goType) (isCommonModel $goType) }}
+        if !{{$aVal}}.Equals(&{{$bVal}}){
+          return false
+        }
+    {{- else if or (isModuleEnum $goType) (isCommonEnum $goType)}}
+        if {{$aVal}} != {{$bVal}}{
+          return false
+        }
+        {{$bVal}} =  {{$aVal}}// enum
+    {{- else if $goType.IsPtr }}
+      if ({{$aVal}} == nil) != ({{$bVal}} == nil) {
+        return false
+      }
+      if {{$aVal}} != nil && {{$bVal}} != nil {
+        {{- template "equals_value" (list (print "(*" $aVal ")") $goType.ElemType (print "(*" $bVal ")") $varNamesGenerator) }}
+      }
+    {{- else if $goType.IsSlice}}
+      if len({{$aVal}}) != len({{$bVal}}){
+        return false
+      }
+      {{- $iVar := $varNamesGenerator.Var "i" }}
+      for {{$iVar}} := range {{$aVal}} {
+        {{- $itemAVal := print $aVal "[" $iVar "]" }}
+        {{- $itemBVal := print $bVal "[" $iVar "]" }}
+        {{- template "equals_value" (list $itemAVal $goType.ElemType $itemBVal $varNamesGenerator) }}
+      }
+    {{- else if $goType.IsMap }}
+      // map comparision
+      if len({{$aVal}}) != len({{$bVal}}){
+        return false
+      }
+      {{- $kVar := $varNamesGenerator.Var "k" }}
+      for {{$kVar}} := range {{$aVal}} {
+          {{- $valA := $varNamesGenerator.Var "valA" }}
+          {{- $valB := $varNamesGenerator.Var "valB" }}
+          {{$valB}}, ok := {{$bVal}}[{{$kVar}}]
+          if !ok {
+            return false
+          }
+          {{$valA}} := {{$aVal}}[{{$kVar}}]
+          {{- template "equals_value" (list $valA $goType.ElemType $valB $varNamesGenerator) }}
+      }
+    {{- else }}
+        if {{$aVal}} != {{$bVal}}{
+          return false
+        }
+    {{- end }}
+{{- end }}

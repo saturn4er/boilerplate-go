@@ -142,7 +142,7 @@ func inFilterGormCondition[T, V any](inFilter *filter.InFilter[T], column string
 		values = append(values, mappedValue)
 	}
 
-	return clause.Eq{Column: column, Value: values}, nil
+	return clause.IN{Column: column, Values: values}, nil
 }
 
 func notEqualsFilterGormCondition[T, V any](notEqualsFilter *filter.NotEqualsFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) { //nolint:lll
@@ -174,7 +174,7 @@ func notInGormCondition[T, V any](notInFilter *filter.NotInFilter[T], column str
 		values = append(values, mappedValue)
 	}
 
-	return clause.Neq{Column: column, Value: values}, nil
+	return clause.Not(clause.IN{Column: column, Values: values}), nil
 }
 
 func orFilterGormCondition[T, V any](orFilter *filter.OrFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {

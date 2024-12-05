@@ -12,10 +12,11 @@ const (
 )
 
 type Type struct {
-	Package  string `yaml:"package"`
-	Type     string `yaml:"type"`
-	ElemType *Type  `yaml:"elem"`
-	KeyType  *Type  `yaml:"key"`
+	Package        string `yaml:"package"`
+	Type           string `yaml:"type"`
+	TypeParameters []Type `yaml:"type_parameters"`
+	ElemType       *Type  `yaml:"elem"`
+	KeyType        *Type  `yaml:"key"`
 }
 
 func (c *Type) IsPrimitive() bool {

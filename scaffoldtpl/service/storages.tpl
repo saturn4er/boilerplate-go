@@ -32,7 +32,11 @@ ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPk
           type {{$model.PluralName}}Outbox {{$txoutboxPkg.Ref "Outbox"}}[{{$model.Name}}]
         {{- else }}
             {{- if $model.HasCustomDBMethods }}
-              type {{$model.PluralName}}StorageBase {{$dbutil.Ref "EntityStorage"}}[{{$model.Name}}, {{$model.Name}}Filter]
+              type {{$model.PluralName}}Storage interface {
+                {{$dbutil.Ref "EntityStorage"}}[{{$model.Name}}, {{$model.Name}}Filter]
+                {{ userCodeBlock (printf "%s metods" $model.Name) }}
+              }
+              {{ userCodeBlock (printf "%s definitions" $model.Name) }}
             {{- else }}
               type {{$model.PluralName}}Storage {{$dbutil.Ref "EntityStorage"}}[{{$model.Name}}, {{$model.Name}}Filter]
             {{- end }}

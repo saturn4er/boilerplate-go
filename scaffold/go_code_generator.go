@@ -392,7 +392,13 @@ func (g *codeGenerator) goTypeByConfigType(typ config.Type) (result *goType) {
 	if typ.KeyType != nil {
 		result.KeyType = g.goType(*typ.KeyType)
 	}
-
+	for _, typeParameter := range typ.TypeParameters {
+		resolvedTypeParameter := g.goType(typeParameter)
+		if resolvedTypeParameter == nil {
+			panic("resolvedTypeParameter is nil")
+		}
+		result.TypeParameters = append(result.TypeParameters, *resolvedTypeParameter)
+	}
 	switch typ.Type {
 	case "ptr":
 		result.IsPtr = true

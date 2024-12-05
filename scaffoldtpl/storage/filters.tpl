@@ -10,14 +10,26 @@
 {{ $dbutil := import "github.com/saturn4er/boilerplate-go/lib/dbutil" }}
 {{ $clause := import "gorm.io/gorm/clause" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") }}
-
+type filterOptions struct {
+  columnPrefix string
+}
+func withFilterColumnPrefix(prefix string) func(*filterOptions) {
+  return func(f *filterOptions) {
+    f.columnPrefix = prefix
+  }
+}
 {{- range $model := $module.Types.Models }}
   {{- if $model.DoNotPersists }}
       {{continue}}
   {{- end }}
-  func {{template "storage.func.build_db_filter" $model.Name}}(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}) ({{ $clause.Ref "Expression"}}, error) {
+  func {{template "storage.func.build_db_filter" $model.Name}}(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}, options ...func(*filterOptions)) ({{ $clause.Ref "Expression"}}, error) {
   if filter == nil {
   return nil, nil
+  }
+
+  opts := &filterOptions{}
+  for _, opt := range options {
+    opt(opts)
   }
 
   return {{$dbutil.Ref "BuildFilterExpression"}}(
@@ -27,7 +39,7 @@
           {{- if $fieldGoType.IsSlice }}
             {{- if or (isModuleEnum (goType $field.Type.ElemType)) (isCommonEnum (goType $field.Type.ElemType)) }}
               {{$dbutil.Ref "MappedColumnArrayFilter"}}[{{(goType $field.Type.ElemType).Ref}}, string]{
-                Column: "{{$field.DBName}}",
+                Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
                 Mapper: {{ template "storage.func.enum_to_internal" $field.Type.ElemType.Type}},
               },
@@ -37,20 +49,20 @@
               }(),
             {{- else }}
               {{$dbutil.Ref "ColumnArrayFilter"}}[{{(goType $field.Type.ElemType).Ref}}]{
-                Column: "{{$field.DBName}}",
+                Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
               },
             {{- end }}
           {{- else -}}
             {{- if or (isModuleEnum (goType $field.Type)) (isCommonEnum (goType $field.Type)) }}
               {{$dbutil.Ref "MappedColumnFilter"}}[{{$fieldGoType.Ref}}, string]{
-                Column: "{{$field.DBName}}",
+                Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
                 Mapper: {{ template "storage.func.enum_to_internal" $field.Type.Type}},
               },
             {{- else}}
               {{$dbutil.Ref "ColumnFilter"}}[{{$fieldGoType.Ref}}]{
-                Column: "{{$field.DBName}}",
+                Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
               },
             {{- end }}

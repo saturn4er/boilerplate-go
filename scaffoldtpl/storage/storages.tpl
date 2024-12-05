@@ -71,45 +71,51 @@ return &Storages{db: db, logger: logger}
         {{ $modelGoType := goType $model }}
         {{ $dbType := $modelGoType.InLocalPackage.WithName (print "db" $modelGoType.Type) }}
         {{ $dbTypeRef := $dbType.Ref }}
+
         {{- if $model.HasCustomDBMethods }}
-          func New{{$model.PluralName}}StorageBase(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "StorageBase")}} {
+          type {{$model.PluralName}}Storage struct {
+          {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]
+          }
+          {{ userCodeBlock (printf "%s custom methods" $model.Name) }}
+          func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
+            return &{{$model.PluralName}}Storage{
+              GormEntityStorage: {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
+                Logger: logger,
+                DB: db,
+                DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
+                ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
+                ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
+                BuildFilterExpression: func(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}) ({{ $clausePkg.Ref "Expression"}}, error) {
+                  return {{template "storage.func.build_db_filter" $model.Name}}(filter)
+                },
+                FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
+                  {{- range $field := $model.Fields }}
+                      {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
+                  {{- end }}
+                },
+              },
+              {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
+            }
+          }
         {{- else }}
           func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
+            return {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
+              Logger: logger,
+              DB: db,
+              DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
+              ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
+              ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
+              BuildFilterExpression: func(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}) ({{ $clausePkg.Ref "Expression"}}, error) {
+                return {{template "storage.func.build_db_filter" $model.Name}}(filter)
+              },
+              FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
+                {{- range $field := $model.Fields }}
+                    {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
+                {{- end }}
+              },
+            }
+          }
         {{- end }}
-        return {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
-        Logger: logger,
-        DB: db,
-        DBErrorsWrapper:       func(err error) error {
-          if err == nil{
-            return nil
-          }
-
-        if {{$errorsPkg.Ref "Is"}}(err, {{$gormPkg.Ref "ErrRecordNotFound"}}) {
-          return {{$servicePkg.Ref (printf "Err%sNotFound" $model.Name)}}
-        }
-
-        var pgErr *{{$pgconnPkg.Ref "PgError"}}
-
-        if {{$errorsPkg.Ref "As"}}(err, &pgErr) {
-          if pgErr.Code == "23505" {
-            return {{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}
-          }
-        }
-
-         {{ userCodeBlock (printf "%s errors mapping" $model.Name) }}
-
-          return err
-        },
-        ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
-        ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
-        BuildFilterExpression: {{template "storage.func.build_db_filter" $model.Name}},
-        FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
-        {{- range $field := $model.Fields }}
-            {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
-        {{- end}}
-        },
-        }
-        }
     {{- end }}
 {{- end }}
 

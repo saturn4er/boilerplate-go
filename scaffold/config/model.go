@@ -16,18 +16,22 @@ const (
 type ConfigModelAdmin struct {
 	Customizable bool `yaml:"customizable"`
 }
-
+type ModelTypeParameter struct {
+	Name       string `yaml:"name"`
+	Constraint string `yaml:"constraint"`
+}
 type Model struct {
-	ID                 uint             `yaml:"id"`
-	Admin              ConfigModelAdmin `yaml:"admin"`
-	Package            string           `yaml:"package"`
-	StorageType        ModelStorageType `yaml:"storage_type"`
-	Name               string           `yaml:"name"`
-	Fields             []ModelField     `yaml:"fields"`
-	PluralName         string           `yaml:"plural_name"`
-	DoNotPersists      bool             `yaml:"do_not_persists"`
-	HasCustomDBMethods bool             `yaml:"has_custom_db_methods"`
-	TableName          string           `yaml:"table_name"`
+	ID                 uint                 `yaml:"id"`
+	Admin              ConfigModelAdmin     `yaml:"admin"`
+	Package            string               `yaml:"package"`
+	StorageType        ModelStorageType     `yaml:"storage_type"`
+	TypeParameters     []ModelTypeParameter `yaml:"type_parameters"`
+	Name               string               `yaml:"name"`
+	Fields             []ModelField         `yaml:"fields"`
+	PluralName         string               `yaml:"plural_name"`
+	DoNotPersists      bool                 `yaml:"do_not_persists"`
+	HasCustomDBMethods bool                 `yaml:"has_custom_db_methods"`
+	TableName          string               `yaml:"table_name"`
 }
 
 func (c *Model) FirstPKField() ModelField {
