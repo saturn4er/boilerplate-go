@@ -127,13 +127,14 @@ func isNotNullFilterGormCondition(column string) (clause.Expression, error) {
 }
 
 func inFilterGormCondition[T, V any](inFilter *filter.InFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
-	if mapper == nil {
-		return clause.Eq{Column: column, Value: inFilter.Values}, nil
-	}
-
 	values := make([]interface{}, 0, len(inFilter.Values))
 
 	for _, val := range inFilter.Values {
+		if mapper == nil {
+			values = append(values, val)
+			continue
+		}
+
 		mappedValue, err := mapper(val)
 		if err != nil {
 			return nil, err
@@ -159,13 +160,14 @@ func notEqualsFilterGormCondition[T, V any](notEqualsFilter *filter.NotEqualsFil
 }
 
 func notInGormCondition[T, V any](notInFilter *filter.NotInFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
-	if mapper == nil {
-		return clause.Neq{Column: column, Value: notInFilter.Values}, nil
-	}
-
 	values := make([]interface{}, 0, len(notInFilter.Values))
 
 	for _, el := range notInFilter.Values {
+		if mapper == nil {
+			values = append(values, el)
+			continue
+		}
+
 		mappedValue, err := mapper(el)
 		if err != nil {
 			return nil, err
