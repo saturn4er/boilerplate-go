@@ -18,6 +18,7 @@
   {{$enum.Name}}{{$value}}
   {{- end}}
   )
+  {{ userCodeBlock (printf "%s methods" $enum.Name) }}
   {{- if not .Helpers}}
   {{- continue }}
   {{- end }}

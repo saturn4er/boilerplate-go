@@ -125,13 +125,23 @@ func (g goType) PackageImport() *codeGeneratorImport {
 func (g goType) DBAlternative() *goType {
 	switch {
 	case g.IsSlice:
+		elemDBAlternative := g.ElemType.DBAlternative()
+		if elemDBAlternative.Type == "string" {
+			return &goType{
+				codeGenerator: g.codeGenerator,
+				Type:          "stringSliceValue",
+				ElemType:      elemDBAlternative,
+				Package:       g.codeGenerator.storagePackagePath(),
+			}
+		}
+
 		return &goType{
 			codeGenerator: g.codeGenerator,
 			Type:          "sliceValue",
 			TypeParameters: []goType{
-				*g.ElemType.DBAlternative(),
+				*elemDBAlternative,
 			},
-			ElemType: g.ElemType.DBAlternative(),
+			ElemType: elemDBAlternative,
 			Package:  g.codeGenerator.storagePackagePath(),
 		}
 	case g.IsMap:

@@ -19,16 +19,38 @@ func (m *mapValue[C, B]) Scan(src interface{}) error {
 return {{$jsonPkg.Ref "Unmarshal"}}(src.([]byte), m)
 }
 
+type stringSliceValue []string
+func (s stringSliceValue) Value() ({{$driverPkg.Ref "Value"}}, error) {
+result := make({{$pq.Ref "StringArray"}}, 0, len(s))
+for _, item := range s {
+  result = append(result, item)
+}
+
+return result.Value()
+}
+
+func (s *stringSliceValue) Scan(src interface{}) error {
+result := make({{$pq.Ref "StringArray"}}, 0)
+err := result.Scan(src)
+if err != nil {
+return err
+}
+
+*s = stringSliceValue(result)
+
+return nil
+}
+
 type sliceValue[B any] []B
 
 func (s sliceValue[B]) Value() ({{$driverPkg.Ref "Value"}}, error) {
 result := make({{$pq.Ref "StringArray"}}, 0, len(s))
 for _, item := range s {
-tmp, err := {{$jsonPkg.Ref "Marshal"}}(item)
-if err != nil {
-return nil, err
-}
-result = append(result, string(tmp))
+  tmp, err := {{$jsonPkg.Ref "Marshal"}}(item)
+  if err != nil {
+    return nil, err
+  }
+  result = append(result, string(tmp))
 }
 
 return result.Value()
