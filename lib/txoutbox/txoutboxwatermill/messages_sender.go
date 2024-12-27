@@ -6,11 +6,21 @@ import (
 
 	millmessage "github.com/ThreeDotsLabs/watermill/message"
 	"github.com/google/uuid"
+
 	"github.com/saturn4er/boilerplate-go/lib/txoutbox"
 )
 
+const OrderingKetMetadataKey = "ordering_key"
+const IdempotencyKeyMetadataKey = "idempotency_key"
+
 type MessagesSender struct {
 	topicPublishers map[string]millmessage.Publisher
+}
+
+func NewMessagesSender(topicPublishers map[string]millmessage.Publisher) *MessagesSender {
+	return &MessagesSender{
+		topicPublishers: topicPublishers,
+	}
 }
 
 var _ txoutbox.MessageSender = new(MessagesSender)
@@ -21,8 +31,8 @@ func (m MessagesSender) SendMessage(ctx context.Context, message *txoutbox.Messa
 		return fmt.Errorf("no publisher for topic %s", message.Topic)
 	}
 	watermillMessage := millmessage.NewMessage(uuid.New().String(), message.Data)
-	watermillMessage.Metadata["idempotency_key"] = message.IdempotencyKey
-	watermillMessage.Metadata["ordering_key"] = message.OrderingKey
+	watermillMessage.Metadata[IdempotencyKeyMetadataKey] = message.IdempotencyKey
+	watermillMessage.Metadata[OrderingKetMetadataKey] = message.OrderingKey
 
 	return publisher.Publish(message.Topic)
 }
