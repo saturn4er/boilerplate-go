@@ -43,5 +43,5 @@ func (m MessagesSender) SendMessage(ctx context.Context, message *txoutbox.Messa
 	watermillMessage.Metadata[IdempotencyKeyMetadataKey] = message.IdempotencyKey
 	watermillMessage.Metadata[OrderingKetMetadataKey] = message.OrderingKey
 
-	return publisher.Publish(message.Topic)
+	return publisher.Publish(message.Topic, watermillMessage)
 }
