@@ -174,6 +174,12 @@ func (g goType) DBAlternative() *goType {
 		return g.InPackage(g.codeGenerator.storagePackagePath()).WithName("json" + g.Type)
 	case g.codeGenerator.isModuleOneOf(&g):
 		return g.InPackage(g.codeGenerator.storagePackagePath()).WithName("json" + g.Type).Ptr()
+	case g.Type == "IP" && g.Package == "net":
+		return &goType{
+			codeGenerator: g.codeGenerator,
+			Type:          "ipValue",
+			Package:       g.codeGenerator.storagePackagePath(),
+		}
 	case g.Type == "any":
 		return &goType{
 			codeGenerator: g.codeGenerator,

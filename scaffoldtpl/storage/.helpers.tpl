@@ -168,6 +168,8 @@
       {{- template "storage.block.convert_value_to_internal" list "el" $inputGoType.ElemType $sliceOutput $outputGoType.ElemType $varNamesGenerator}}
       }
       {{call $output $tmpVar}}
+    {{- else if and (eq $inputGoType.Type "IP") (eq $inputGoType.Package "net")}}
+        {{call $output (print "(ipValue)(" $input ")")}}
     {{- else if and (eq $inputGoType.Type "Time") (eq $inputGoType.Package "time") (not $inputGoType.WithTimezone)}}
       {{call $output (print "(" $input ").UTC()")}}
     {{- else }}
@@ -275,6 +277,8 @@
       {{- template "storage.block.convert_value_to_service" list "el" $inputGoType.ElemType $itemOutput $outputGoType.ElemType $varNamesGenerator}}
       }
       {{call $output $tmpVar}}
+    {{- else if and (eq $outputGoType.Type "IP") (eq $outputGoType.Package "net")}}
+        {{call $output (print "(net.IP)(" $input ")")}}
     {{- else}}
       {{call $output $input}}
     {{- end }}

@@ -92,6 +92,10 @@
         {{- $itemBVal := print $bVal "[" $iVar "]" }}
         {{- template "equals_value" (list $itemAVal $goType.ElemType $itemBVal $varNamesGenerator) }}
       }
+    {{- else if and (eq $goType.Package "net") (eq $goType.Type "IP") }}
+      if !{{$aVal}}.Equal({{$bVal}}){
+        return false
+      }
     {{- else if $goType.IsMap }}
       // map comparision
       if len({{$aVal}}) != len({{$bVal}}){

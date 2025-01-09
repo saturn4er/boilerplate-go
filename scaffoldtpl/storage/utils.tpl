@@ -19,6 +19,24 @@ func (m *mapValue[C, B]) Scan(src interface{}) error {
 return {{$jsonPkg.Ref "Unmarshal"}}(src.([]byte), m)
 }
 
+type ipValue net.IP
+
+func (i *ipValue) Value() (driver.Value, error) {
+return (*net.IP)(i).String(), nil
+}
+
+func (i *ipValue) Scan(src any) error {
+switch src := src.(type) {
+case string:
+*i = ipValue(net.ParseIP(src))
+case []byte:
+*i = ipValue(net.ParseIP(string(src)))
+default:
+return fmt.Errorf("can't parse ipValue from: %T", src)
+}
+return nil
+}
+
 type stringSliceValue []string
 func (s stringSliceValue) Value() ({{$driverPkg.Ref "Value"}}, error) {
 result := make({{$pq.Ref "StringArray"}}, 0, len(s))

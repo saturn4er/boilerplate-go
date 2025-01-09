@@ -103,7 +103,7 @@ func (c *ModelField) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	type plain ModelField
 	if err := unmarshal((*plain)(c)); err != nil {
-		return err
+		return fmt.Errorf("unmarshal model: %w", err)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -45,7 +46,7 @@ func (c *Type) UnmarshalYAML(unmarshal func(any) error) error {
 	var result resultType
 
 	if err := unmarshal(&result); err != nil {
-		return err
+		return fmt.Errorf("unmarshal type: %w", err)
 	}
 
 	*c = Type(result)
