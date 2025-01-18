@@ -2,6 +2,8 @@ package txoutbox
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/go-pnp/go-pnp/pkg/optionutil"
@@ -13,13 +15,58 @@ import (
 	"github.com/saturn4er/boilerplate-go/lib/filter"
 )
 
-type Message struct {
+type dbMessage struct {
 	ID             int    `gorm:"primaryKey;autoIncrement:true"`
 	Topic          string `gorm:"type:varchar(100);not null"`
 	OrderingKey    string `gorm:"type:varchar(100);not null"`
 	IdempotencyKey string `gorm:"type:varchar(100);not null"`
 	Data           []byte `gorm:"type:bytea;not null"`
+	Metadata       string `gorm:"type:jsonb;not null"`
 	CreatedAt      time.Time
+}
+type Message struct {
+	ID             int               `gorm:"primaryKey;autoIncrement:true"`
+	Topic          string            `gorm:"type:varchar(100);not null"`
+	OrderingKey    string            `gorm:"type:varchar(100);not null"`
+	IdempotencyKey string            `gorm:"type:varchar(100);not null"`
+	Data           []byte            `gorm:"type:bytea;not null"`
+	Metadata       map[string]string `gorm:"type:jsonb;not null"`
+	CreatedAt      time.Time
+}
+
+func convertMessageToDB(src *Message) (*dbMessage, error) {
+	metadata, err := json.Marshal(src.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("encode metadata: %w", err)
+	}
+
+	return &dbMessage{
+		ID:             src.ID,
+		Topic:          src.Topic,
+		OrderingKey:    src.OrderingKey,
+		IdempotencyKey: src.IdempotencyKey,
+		Data:           src.Data,
+		Metadata:       string(metadata),
+		CreatedAt:      src.CreatedAt,
+	}, nil
+}
+
+func convertMessageFromDB(src *dbMessage) (*Message, error) {
+	var metadata map[string]string
+	err := json.Unmarshal([]byte(src.Metadata), &metadata)
+	if err != nil {
+		return nil, fmt.Errorf("decode metadata: %w", err)
+	}
+
+	return &Message{
+		ID:             src.ID,
+		Topic:          src.Topic,
+		OrderingKey:    src.OrderingKey,
+		IdempotencyKey: src.IdempotencyKey,
+		Data:           src.Data,
+		Metadata:       metadata,
+		CreatedAt:      src.CreatedAt,
+	}, nil
 }
 
 func (a Message) TableName() string {
@@ -33,6 +80,7 @@ const (
 	MessageFieldTopic
 	MessageFieldOrderingKey
 	MessageFieldIdempotencyKey
+	MessageFieldMetadata
 	MessageFieldCreatedAt
 )
 
@@ -61,12 +109,17 @@ type GormStorage[ExtType any] struct {
 }
 
 func (s GormStorage[ExtType]) Send(ctx context.Context, model *ExtType) error {
-	dbModel, err := s.BuildMessage(model)
+	message, err := s.BuildMessage(model)
 	if err != nil {
 		return err
 	}
 
-	err = s.DB.WithContext(ctx).Create(dbModel).Error
+	dbMessageToCreate, err := convertMessageToDB(message)
+	if err != nil {
+		return err
+	}
+
+	err = s.DB.WithContext(ctx).Create(dbMessageToCreate).Error
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -79,14 +132,15 @@ func (s GormStorage[ExtType]) First(
 	filter *MessageFilter,
 	options ...optionutil.Option[dbutil.SelectOptions],
 ) (*Message, error) {
-	result := new(Message)
-	db := s.DB.WithContext(ctx).Model(&result)
+	resultDBMessage := new(dbMessage)
+	db := s.DB.WithContext(ctx).Model(&resultDBMessage)
 
 	clauses, err := optionutil.ApplyOptions(&dbutil.SelectOptions{}, options...).BuildExpressions(map[any]clause.Column{
 		MessageFieldID:             {Name: "id"},
 		MessageFieldTopic:          {Name: "topic"},
 		MessageFieldOrderingKey:    {Name: "ordering_key"},
 		MessageFieldIdempotencyKey: {Name: "idempotency_key"},
+		MessageFieldMetadata:       {Name: "metadata"},
 		MessageFieldCreatedAt:      {Name: "created_at"},
 	})
 	if err != nil {
@@ -104,11 +158,16 @@ func (s GormStorage[ExtType]) First(
 		db = db.Clauses(filterExpr)
 	}
 
-	if err := db.First(&result).Error; err != nil {
+	if err := db.First(&resultDBMessage).Error; err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return result, nil
+	message, err := convertMessageFromDB(resultDBMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	return message, nil
 }
 
 func (s GormStorage[ExtType]) Find(
@@ -116,8 +175,8 @@ func (s GormStorage[ExtType]) Find(
 	filter *MessageFilter,
 	options ...optionutil.Option[dbutil.SelectOptions],
 ) ([]*Message, error) {
-	var result []*Message
-	db := s.DB.WithContext(ctx).Model(&result)
+	var dbMessages []*dbMessage
+	db := s.DB.WithContext(ctx).Model(&dbMessages)
 
 	clauses, err := optionutil.ApplyOptions(&dbutil.SelectOptions{}, options...).BuildExpressions(map[any]clause.Column{
 		MessageFieldID:             {Name: "id"},
@@ -141,15 +200,26 @@ func (s GormStorage[ExtType]) Find(
 		db = db.Clauses(filterExpr)
 	}
 
-	if err := db.Find(&result).Error; err != nil {
+	if err := db.Find(&dbMessages).Error; err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return result, nil
+	messages := make([]*Message, 0, len(dbMessages))
+
+	for _, d := range dbMessages {
+		message, err := convertMessageFromDB(d)
+		if err != nil {
+			return nil, err
+		}
+
+		messages = append(messages, message)
+	}
+
+	return messages, nil
 }
 
 func (s GormStorage[ExtType]) Delete(ctx context.Context, filter *MessageFilter) error {
-	var dbTypes []*Message
+	var dbTypes []*dbMessage
 	db := s.DB.WithContext(ctx).Model(&dbTypes)
 
 	filterExpr, err := filter.buildExpression()
