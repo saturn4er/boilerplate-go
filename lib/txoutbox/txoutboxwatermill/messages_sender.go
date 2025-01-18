@@ -40,6 +40,9 @@ func (m MessagesSender) SendMessage(ctx context.Context, message *txoutbox.Messa
 		publisher = m.defaultPublisher
 	}
 	watermillMessage := millmessage.NewMessage(uuid.New().String(), message.Data)
+	for k, v := range message.Metadata {
+		watermillMessage.Metadata[k] = v
+	}
 	watermillMessage.Metadata[IdempotencyKeyMetadataKey] = message.IdempotencyKey
 	watermillMessage.Metadata[OrderingKetMetadataKey] = message.OrderingKey
 
