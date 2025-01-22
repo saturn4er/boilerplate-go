@@ -24,6 +24,11 @@ type dbMessage struct {
 	Metadata       string `gorm:"type:jsonb;not null"`
 	CreatedAt      time.Time
 }
+
+func (d *dbMessage) TableName() string {
+	return "tx_outbox.messages"
+}
+
 type Message struct {
 	ID             int               `gorm:"primaryKey;autoIncrement:true"`
 	Topic          string            `gorm:"type:varchar(100);not null"`
@@ -67,10 +72,6 @@ func convertMessageFromDB(src *dbMessage) (*Message, error) {
 		Metadata:       metadata,
 		CreatedAt:      src.CreatedAt,
 	}, nil
-}
-
-func (a Message) TableName() string {
-	return "tx_outbox.messages"
 }
 
 type MessageField byte
