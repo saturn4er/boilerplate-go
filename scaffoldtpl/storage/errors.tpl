@@ -13,6 +13,7 @@
 {{ $gormPkg := import "gorm.io/gorm" }}
 {{ $clausePkg := import "gorm.io/gorm/clause" }}
 {{ $errorsPkg := import "github.com/pkg/errors" }}
+{{ $stdErrorsPkg := import "errors" }}
 {{ $pgconnPkg := import "github.com/jackc/pgx/v5/pgconn"}}
 {{ $contextPkg := import "context" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
@@ -29,14 +30,14 @@
       }
 
       if {{$errorsPkg.Ref "Is"}}(err, {{$gormPkg.Ref "ErrRecordNotFound"}}) {
-        return {{$servicePkg.Ref (printf "Err%sNotFound" $model.Name)}}
+        return {{$errorsPkg.Ref "WithStack"}}({{$stdErrorsPkg.Ref "Join"}}({{$servicePkg.Ref (printf "Err%sNotFound" $model.Name)}}, err))
       }
 
       var pgErr *{{$pgconnPkg.Ref "PgError"}}
 
       if {{$errorsPkg.Ref "As"}}(err, &pgErr) {
         if pgErr.Code == "23505" {
-          return {{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}
+          return {{$errorsPkg.Ref "WithStack"}}({{$stdErrorsPkg.Ref "Join"}}({{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}, err))
         }
       }
 

@@ -16,10 +16,8 @@
 
 
 {{- define "fieldGormTag" -}}
-    {{- $fieldType := (goType .Type).DBAlternative }}
-    {{- if or $fieldType.GormType .PrimaryKey -}}
-      `gorm:"{{- if $fieldType.GormType -}}type:{{- $fieldType.GormType -}};{{- end -}}{{if .PrimaryKey}}primaryKey{{end}}"`
-    {{- else -}}{{- end -}}
+    {{- $fieldType := (goType .Type).DBAlternative -}}
+    `gorm:"column:{{- .DBName -}};{{- if $fieldType.GormType -}}type:{{- $fieldType.GormType -}};{{- end -}}{{if .PrimaryKey}}primaryKey{{end}}"`
 {{- end -}}
 
 

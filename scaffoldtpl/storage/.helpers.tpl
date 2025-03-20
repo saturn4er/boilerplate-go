@@ -60,6 +60,7 @@
 {{- define "storage.block.convert_value_to_internal"}}
     {{- $jsonPkg := import "encoding/json" -}}
     {{- $fmtPkg := import "fmt" -}}
+    {{- $errorsPkg := import "github.com/pkg/errors" -}}
     {{- $input := index . 0 -}}
     {{- $inputGoType := index . 1 -}}
     {{- $output := index . 2 -}}
@@ -98,7 +99,7 @@
           {{- $model := getModel $inputGoType }}
           {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}(toPtr({{$input}}))
           if err!=nil {
-          return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
+            return nil, {{$errorsPkg.Ref "Wrap"}}(err, "convert {{$model.Name}} to db")
           }
           {{call $output (print "*" $tmpVar)}}
     {{- else if and $inputGoType.IsPtr (or (isModuleModel $inputGoType.ElemType) (isCommonModel $inputGoType.ElemType)) }}
@@ -106,7 +107,7 @@
         {{- $model := getModel $inputGoType.ElemType}}
         {{$tmpVar}}, err := {{template "storage.func.json_model_to_internal" $model.Name}}({{$input}})
         if err!=nil {
-        return nil, fmt.Errorf("convert {{$model.Name}} to db: %w", err)
+        return nil, {{$errorsPkg.Ref "Wrap"}}(err, "convert {{$model.Name}} to db")
         }
         {{call $output $tmpVar}}
         } else {

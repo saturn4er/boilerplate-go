@@ -37,7 +37,7 @@ func withFilterColumnPrefix(prefix string) func(*filterOptions) {
       {{- $fieldGoType := goType $field.Type}}
       {{- if $field.Filterable }}
           {{- if $fieldGoType.IsSlice }}
-            {{- if or (isModuleEnum (goType $field.Type.ElemType)) (isCommonEnum (goType $field.Type.ElemType)) }}
+            {{- if isEnum (goType $field.Type.ElemType) }}
               {{$dbutil.Ref "MappedColumnArrayFilter"}}[{{(goType $field.Type.ElemType).Ref}}, string]{
                 Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
@@ -54,12 +54,27 @@ func withFilterColumnPrefix(prefix string) func(*filterOptions) {
               },
             {{- end }}
           {{- else -}}
-            {{- if or (isModuleEnum (goType $field.Type)) (isCommonEnum (goType $field.Type)) }}
+            {{- if isEnum $fieldGoType }}
               {{$dbutil.Ref "MappedColumnFilter"}}[{{$fieldGoType.Ref}}, string]{
                 Column: opts.columnPrefix+"{{$field.DBName}}",
                 Filter: filter.{{$field.Name}},
                 Mapper: {{ template "storage.func.enum_to_internal" $field.Type.Type}},
               },
+            {{- else if and $fieldGoType.IsPtr (isEnum $fieldGoType.ElemType) }}
+                {{$dbutil.Ref "MappedColumnFilter"}}[{{$fieldGoType.Ref}}, *string]{
+                Column: opts.columnPrefix+"{{$field.DBName}}",
+                Filter: filter.{{$field.Name}},
+                Mapper: func(val *{{$fieldGoType.ElemType.Ref}}) (*string, error) {
+                  if val == nil{
+                    return nil, nil
+                  }
+                  result, err := {{ template "storage.func.enum_to_internal" $field.Type.ElemType.Type}}(*val)
+                  if err != nil {
+                    return nil, err
+                  }
+                  return &result, nil
+                  },
+                },
             {{- else}}
               {{$dbutil.Ref "ColumnFilter"}}[{{$fieldGoType.Ref}}]{
                 Column: opts.columnPrefix+"{{$field.DBName}}",

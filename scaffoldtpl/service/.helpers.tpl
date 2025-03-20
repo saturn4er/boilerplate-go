@@ -74,7 +74,6 @@
         if {{$aVal}} != {{$bVal}}{
           return false
         }
-        {{$bVal}} =  {{$aVal}}// enum
     {{- else if $goType.IsPtr }}
       if ({{$aVal}} == nil) != ({{$bVal}} == nil) {
         return false

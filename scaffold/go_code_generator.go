@@ -358,6 +358,8 @@ func (g *codeGenerator) Generate(data any) (string, error) {
 			head.WriteString("\t" + imprt.Alias + " \"" + imprt.ImportPath + "\"\n")
 		}
 
+		head.WriteString(g.userCodeBlock("imports") + "\n")
+
 		head.WriteString(")\n")
 	}
 
@@ -787,6 +789,10 @@ func newCodeGenerator(
 
 				return val
 			}
+		},
+		"debug": func(val string) string {
+			fmt.Println(val)
+			return ""
 		},
 	})
 

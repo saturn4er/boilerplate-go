@@ -8,6 +8,7 @@
 {{- $driverPkg := import "database/sql/driver"}}
 {{- $jsonPkg := import "encoding/json" }}
 {{- $pq := import "github.com/lib/pq" }}
+{{- $errorsPkg := import "github.com/pkg/errors" -}}
 
 type mapValue[C comparable, B any] map[string]B
 
@@ -32,7 +33,7 @@ case string:
 case []byte:
 *i = ipValue(net.ParseIP(string(src)))
 default:
-return fmt.Errorf("can't parse ipValue from: %T", src)
+return {{$errorsPkg.Ref "Errorf"}}("can't parse ipValue from: %T", src)
 }
 return nil
 }
