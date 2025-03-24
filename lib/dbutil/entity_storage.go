@@ -12,6 +12,7 @@ import (
 
 type EntityStorage[Entity, Filter any] interface {
 	Create(ctx context.Context, model *Entity) (*Entity, error)
+	BatchCreate(ctx context.Context, models []*Entity) ([]*Entity, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
 	Update(ctx context.Context, model *Entity) (*Entity, error)
 	Save(ctx context.Context, model *Entity) (*Entity, error)
@@ -29,6 +30,34 @@ type GormEntityStorage[ExtType any, IntType any, FilterType any] struct {
 	ConvertToExternal     func(*IntType) (*ExtType, error)
 	BuildFilterExpression func(*FilterType) (clause.Expression, error)
 	FieldMapping          map[any]clause.Column
+}
+
+func (s GormEntityStorage[ExtType, IntType, FilterType]) BatchCreate(ctx context.Context, models []*ExtType) ([]*ExtType, error) {
+	dbModels := make([]*IntType, 0, len(models))
+	for _, model := range models {
+		dbModel, err := s.ConvertToInternal(model)
+		if err != nil {
+			return nil, err
+		}
+
+		dbModels = append(dbModels, dbModel)
+	}
+
+	err := s.DB.WithContext(ctx).Create(dbModels).Error
+	if err != nil {
+		return nil, s.DBErrorsWrapper(errors.WithStack(err))
+	}
+
+	result := make([]*ExtType, 0, len(dbModels))
+	for _, dbModel := range dbModels {
+		extType, err := s.ConvertToExternal(dbModel)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, extType)
+	}
+	return result, nil
 }
 
 func (s GormEntityStorage[ExtType, IntType, FilterType]) Create(ctx context.Context, model *ExtType) (*ExtType, error) {
