@@ -50,6 +50,7 @@
   }
 {{- end }}
 {{- range $model := $module.Types.Models }}
+  {{- if len $model.Fields}}
     type {{$model.Name}}Field byte
     const (
     {{$model.Name}}Field{{(index $model.Fields 0).Name}} {{$model.Name}}Field = iota + 1
@@ -66,6 +67,7 @@
     Or []*{{$model.Name}}Filter
     And []*{{$model.Name}}Filter
     }
+  {{- end }}
 
     type {{$model.Name}}{{if gt (len $model.TypeParameters) 0}}[{{range $model.TypeParameters}} {{.Name}} {{.Constraint}}{{end}}]{{end}} struct {
     {{- range $field := $model.Fields }}
