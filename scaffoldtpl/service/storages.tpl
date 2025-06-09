@@ -21,9 +21,14 @@ type Storage interface {
     {{- else }}
         {{$model.PluralName}}() {{$model.PluralName}}Storage
     {{- end }}
+
+    {{- if $model.AdvisoryLock }}
+      {{$model.PluralName}}AdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, lockID {{$model.AdvisoryLockType}}) error 
+    {{- end }}
 {{- end }}
 IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}}
 ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx Storage) error) error
+
 }
 
 {{- range $model := $module.Types.Models }}

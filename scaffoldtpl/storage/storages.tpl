@@ -14,6 +14,7 @@
 {{ $clausePkg := import "gorm.io/gorm/clause" }}
 {{ $errorsPkg := import "github.com/pkg/errors" }}
 {{ $pgconnPkg := import "github.com/jackc/pgx/v5/pgconn"}}
+{{ $xxhashPkg := import "github.com/cespare/xxhash"}}
 {{ $contextPkg := import "context" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
@@ -46,6 +47,26 @@ func (s Storages) IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}} {
     DB: s.db,
   }
 }
+
+{{- range $model := $module.Types.Models }}
+  {{- if $model.AdvisoryLock }}
+    func (s Storages) {{$model.PluralName}}AdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, lockID {{$model.AdvisoryLockType}}) error {
+      offset :=  {{$xxhashPkg.Ref "Sum64String"}}("{{$model.PluralName}}")
+      {{- if eq $model.AdvisoryLockType "uuid" }}
+        result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?, ?)", offset, {{$xxhashPkg.Ref "Sum64String"}}(lockID.String()))
+      {{- else if eq $model.AdvisoryLockType "string" }}
+        result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?, ?)", offset, {{$xxhashPkg.Ref "Sum64String"}}(lockID))
+      {{- else }}
+        result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?, ?)", offset, lockID)
+      {{- end }}
+      if result.Error != nil {
+        return result.Error
+      }
+      return nil
+    }
+  {{- end }}
+{{- end }}
+
 func (s Storages) ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx {{$servicePkg.Ref "Storage"}}) error) error {
 return s.db.Transaction(func(tx *gorm.DB) error {
 return cb(ctx, &Storages{tx, s.logger})
