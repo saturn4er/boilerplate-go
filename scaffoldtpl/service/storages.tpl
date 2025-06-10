@@ -24,7 +24,7 @@ type Storage interface {
 {{- end }}
 IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}}
 ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx Storage) error) error
-WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID any) error 
+WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID int64) error 
 }
 
 {{- range $model := $module.Types.Models }}

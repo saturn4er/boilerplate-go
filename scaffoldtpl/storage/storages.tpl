@@ -15,9 +15,9 @@
 {{ $errorsPkg := import "github.com/pkg/errors" }}
 {{ $pgconnPkg := import "github.com/jackc/pgx/v5/pgconn"}}
 {{ $xxhashPkg := import "github.com/cespare/xxhash"}}
+{{ $strconvPkg := import "strconv" }}
 {{ $uuidPkg := import "github.com/google/uuid"}}
 {{ $contextPkg := import "context" }}
-{{ $fmtPkg := import "fmt" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
 
@@ -48,24 +48,18 @@ func (s Storages) IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}} {
   return {{$idempotencyPkg.Ref "GormStorage"}}{
     DB: s.db,
   }
+
 }
 
-func (s Storages) WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID any) error {
-	scopeHash := {{$xxhashPkg.Ref "Sum64String"}}(scope)
-	var lockIDEscaped int64
+func (s *Storages) WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID int64) error {
+	hasher := {{$xxhashPkg.Ref "New"}}()
+	hasher.Write([]byte(scope))
+	hasher.Write([]byte{':'})
+	hasher.Write({{$strconvPkg.Ref "AppendInt"}}(nil, lockID, 10))
 
-	switch v := lockID.(type) {
-	case int, int32, int64, uint, uint32, uint64:
-		lockIDEscaped = v.(int64)
-	case {{$uuidPkg.Ref "UUID"}}:
-		lockIDEscaped = int64({{$xxhashPkg.Ref "Sum64"}}(v[:]))
-	default:
-		return {{$fmtPkg.Ref "Errorf"}}("unsupported type for advisory lock ID: %T", v)
-	}
-
-	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?, ?)", scopeHash, lockIDEscaped)
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
 	if result.Error != nil {
-		return result.Error 
+		return result.Error
 	}
 
 	return nil
