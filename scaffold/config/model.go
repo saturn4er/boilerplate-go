@@ -32,8 +32,6 @@ type Model struct {
 	DoNotPersists      bool                 `yaml:"do_not_persists"`
 	HasCustomDBMethods bool                 `yaml:"has_custom_db_methods"`
 	TableName          string               `yaml:"table_name"`
-	AdvisoryLock       bool                 `yaml:"advisory_lock_gen"`
-	AdvisoryLockType   string               `yaml:"advisory_lock_type"`
 }
 
 func (c *Model) FirstPKField() ModelField {
@@ -58,9 +56,6 @@ func (c *Model) Init(config *Config, moduleName string) error {
 	for i, field := range c.Fields {
 		if err := field.Init(config, moduleName); err != nil {
 			return err
-		}
-		if c.AdvisoryLock && (field.PrimaryKey || strings.ToLower(field.Name) == "id") {
-			c.AdvisoryLockType = field.Type.Type
 		}
 
 		c.Fields[i] = field
