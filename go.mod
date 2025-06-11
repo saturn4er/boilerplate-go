@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	github.com/GoAdminGroup/go-admin v1.2.26
 	github.com/ThreeDotsLabs/watermill v1.4.1
+	github.com/cespare/xxhash v1.1.0
 	github.com/expr-lang/expr v1.15.6
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-pnp/go-pnp v0.0.0-20231206151410-39a518625c9c
