@@ -2,7 +2,9 @@ package dbutil
 
 import (
 	"context"
+	"strconv"
 
+	"github.com/cespare/xxhash"
 	"github.com/go-pnp/go-pnp/logging"
 	"github.com/go-pnp/go-pnp/pkg/optionutil"
 	"github.com/pkg/errors"
@@ -20,6 +22,7 @@ type EntityStorage[Entity, Filter any] interface {
 	FirstOrCreate(ctx context.Context, filter *Filter, model *Entity, options ...optionutil.Option[SelectOptions]) (*Entity, error)
 	Find(ctx context.Context, filter *Filter, options ...optionutil.Option[SelectOptions]) ([]*Entity, error)
 	Delete(ctx context.Context, filter *Filter) error
+	WithAdvisoryLock(ctx context.Context, lockID int64) error
 }
 
 type GormEntityStorage[ExtType any, IntType any, FilterType any] struct {
@@ -30,6 +33,7 @@ type GormEntityStorage[ExtType any, IntType any, FilterType any] struct {
 	ConvertToExternal     func(*IntType) (*ExtType, error)
 	BuildFilterExpression func(*FilterType) (clause.Expression, error)
 	FieldMapping          map[any]clause.Column
+	LockScope             string
 }
 
 func (s GormEntityStorage[ExtType, IntType, FilterType]) BatchCreate(ctx context.Context, models []*ExtType) ([]*ExtType, error) {
@@ -218,6 +222,20 @@ func (s GormEntityStorage[ExtType, IntType, FilterType]) Delete(ctx context.Cont
 
 	if err := db.Delete(&dbTypes, filterExpr).Error; err != nil {
 		return s.DBErrorsWrapper(errors.WithStack(err))
+	}
+
+	return nil
+}
+
+func (s GormEntityStorage[ExtType, IntType, FilterType]) WithAdvisoryLock(ctx context.Context, lockID int64) error {
+	hasher := xxhash.New()
+	hasher.Write([]byte(s.LockScope))
+	hasher.Write([]byte{':'})
+	hasher.Write(strconv.AppendInt(nil, lockID, 10))
+
+	result := s.DB.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	if result.Error != nil {
+		return result.Error
 	}
 
 	return nil
