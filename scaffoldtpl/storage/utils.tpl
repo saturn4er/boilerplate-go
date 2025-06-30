@@ -9,6 +9,7 @@
 {{- $jsonPkg := import "encoding/json" }}
 {{- $pq := import "github.com/lib/pq" }}
 {{- $errorsPkg := import "github.com/pkg/errors" -}}
+{{- $uuidPkg := import "github.com/google/uuid" -}}
 
 type mapValue[C comparable, B any] map[string]B
 
