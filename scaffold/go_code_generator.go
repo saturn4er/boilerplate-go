@@ -134,6 +134,14 @@ func (g goType) DBAlternative() *goType {
 				Package:       g.codeGenerator.storagePackagePath(),
 			}
 		}
+		if elemDBAlternative.Type == "UUID" {
+			return &goType{
+				codeGenerator: g.codeGenerator,
+				Type:          "uuidSliceValue",
+				ElemType:      elemDBAlternative,
+				Package:       g.codeGenerator.storagePackagePath(),
+			}
+		}
 
 		return &goType{
 			codeGenerator: g.codeGenerator,
