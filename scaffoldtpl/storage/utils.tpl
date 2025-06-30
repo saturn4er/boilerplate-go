@@ -9,7 +9,6 @@
 {{- $jsonPkg := import "encoding/json" }}
 {{- $pq := import "github.com/lib/pq" }}
 {{- $errorsPkg := import "github.com/pkg/errors" -}}
-{{- $uuidPkg := import "github.com/google/uuid" -}}
 
 type mapValue[C comparable, B any] map[string]B
 
@@ -64,53 +63,37 @@ return nil
 type sliceValue[B any] []B
 
 func (s sliceValue[B]) Value() ({{$driverPkg.Ref "Value"}}, error) {
-  result := make({{$pq.Ref "StringArray"}}, 0, len(s))
-  for _, item := range s {
-    var marshalledItem string
-    switch v := any(item).(type) {
-    case {{$uuidPkg.Ref "UUID"}}:
-      marshalledItem = v.String()
-    default:
-      tmp, err := {{$jsonPkg.Ref "Marshal"}}(item)
-      if err != nil {
-        return nil, err
-      }
-      marshalledItem = string(tmp)
-    }
-
-    result = append(result, marshalledItem)
+result := make({{$pq.Ref "StringArray"}}, 0, len(s))
+for _, item := range s {
+  tmp, err := {{$jsonPkg.Ref "Marshal"}}(item)
+  if err != nil {
+    return nil, err
   }
+  result = append(result, string(tmp))
+}
 
-  return result.Value()
+return result.Value()
 }
 
 func (s *sliceValue[B]) Scan(src interface{}) error {
-  result := make({{$pq.Ref "StringArray"}}, 0)
-  err := result.Scan(src)
-  if err != nil {
-    return err
-  }
+result := make({{$pq.Ref "StringArray"}}, 0)
+err := result.Scan(src)
+if err != nil {
+return err
+}
 
-  *s = make([]B, 0, len(result))
+*s = make([]B, 0, len(result))
 
-  for _, item := range result {
-    var tmp B
-    switch p := any(&tmp).(type) {
-    case *{{$uuidPkg.Ref "UUID"}}:
-      parsedUUID, err := {{$uuidPkg.Ref "Parse"}}(item)
-      if err != nil {
-        return err
-      }
-      *p = parsedUUID
-    default:
-      if err := {{$jsonPkg.Ref "Unmarshal"}}([]byte(item), p); err != nil {
-        return err
-      }
-    }
-    *s = append(*s, tmp)
-  }
+for _, item := range result {
+var tmp B
+err = {{$jsonPkg.Ref "Unmarshal"}}([]byte(item), &tmp)
+if err != nil {
+return err
+}
+*s = append(*s, tmp)
+}
 
-  return nil
+return nil
 }
 
 func fromPtr[T any](ptr *T) T {
