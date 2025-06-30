@@ -3,6 +3,7 @@ package dbutil
 import (
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/gorm/clause"
 
@@ -46,7 +47,7 @@ func ArrayFilterExpression[T, V any](value filter.ArrayFilter[T], column string,
 
 func arrayContainsFilterGormCondition[T, V any](containsFilter *filter.ArrayContainsFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) { //nolint:lll
 	if mapper == nil {
-		return clause.Expr{SQL: fmt.Sprintf("%s @> ?", column), Vars: []interface{}{containsFilter.Values}}, nil
+		return clause.Expr{SQL: fmt.Sprintf("%s @> ?", column), Vars: []interface{}{pq.Array(containsFilter.Values)}}, nil
 	}
 
 	values := make([]interface{}, 0, len(containsFilter.Values))
