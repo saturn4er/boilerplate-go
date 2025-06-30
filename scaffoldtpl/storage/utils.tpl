@@ -96,6 +96,34 @@ return err
 return nil
 }
 
+type uuidSlice []{{$uuidPkg.Ref "UUID"}}
+
+func (s uuidSlice) Value() ({{$driverPkg.Ref "Value"}}, error) {
+	result := make({{$pq.Ref "StringArray"}}, len(s))
+	for i, u := range s {
+		result[i] = u.String()
+	}
+	return result.Value()
+}
+
+func (s *uuidSlice) Scan(src interface{}) error {
+	var result {{$pq.Ref "StringArray"}}
+	if err := result.Scan(src); err != nil {
+		return err
+	}
+
+	*s = make(uuidSlice, len(result))
+	for i, str := range result {
+		parsedUUID, err := {{$uuidPkg.Ref "Parse"}}(str)
+		if err != nil {
+			return err
+		}
+		(*s)[i] = parsedUUID
+	}
+
+	return nil
+}
+
 func fromPtr[T any](ptr *T) T {
   return *ptr
 }
