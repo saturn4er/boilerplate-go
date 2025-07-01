@@ -2,6 +2,8 @@ package testservice
 
 import (
 	fmt "fmt"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 type NotFoundError string

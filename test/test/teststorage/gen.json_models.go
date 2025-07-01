@@ -6,8 +6,11 @@ import (
 	fmt "fmt"
 
 	uuid "github.com/google/uuid"
+	errors "github.com/pkg/errors"
 
 	testservice "github.com/saturn4er/boilerplate-go/test/test/testservice"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 type jsonSomeModel struct {
@@ -32,7 +35,7 @@ type jsonSomeModel struct {
 	ModelPtrSliceField sliceValue[*jsonSomeOtherModel]       `json:"model_ptr_slice_field"`
 	OneOfSliceField    sliceValue[*jsonSomeOneOf]            `json:"one_of_slice_field"`
 	OneOfPtrSliceField sliceValue[*jsonSomeOneOf]            `json:"one_of_ptr_slice_field"`
-	SliceEnumField     sliceValue[string]                    `json:"slice_enum_field"`
+	SliceEnumField     stringSliceValue                      `json:"slice_enum_field"`
 	SliceEnumPtrField  sliceValue[*string]                   `json:"slice_enum_ptr_field"`
 	SliceAnyField      sliceValue[*string]                   `json:"slice_any_field"`
 	SliceAnyPtrField   sliceValue[*string]                   `json:"slice_any_ptr_field"`
@@ -51,14 +54,13 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 	result.ID = src.ID
 	tmp1, err := convertSomeOtherModelToJsonModel(toPtr(src.ModelField))
 	if err != nil {
-		return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+		return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 	}
 	result.ModelField = *tmp1
 	if src.ModelPtrField != nil {
-
 		tmp2, err := convertSomeOtherModelToJsonModel(src.ModelPtrField)
 		if err != nil {
-			return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
 		result.ModelPtrField = tmp2
 	} else {
@@ -118,7 +120,7 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 	for k, v := range src.MapModelField {
 		tmp11, err := convertSomeOtherModelToJsonModel(toPtr(v))
 		if err != nil {
-			return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
 		tmp10[k] = *tmp11
 	}
@@ -126,10 +128,9 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 	tmp12 := make(mapValue[string, *jsonSomeOtherModel], len(src.MapModelPtrField))
 	for k1, v1 := range src.MapModelPtrField {
 		if v1 != nil {
-
 			tmp13, err := convertSomeOtherModelToJsonModel(v1)
 			if err != nil {
-				return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+				return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 			}
 			tmp12[k1] = tmp13
 		} else {
@@ -215,7 +216,7 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 	for _, el := range src.ModelSliceField {
 		tmp28, err := convertSomeOtherModelToJsonModel(toPtr(el))
 		if err != nil {
-			return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
 		tmp27 = append(tmp27, *tmp28)
 	}
@@ -223,10 +224,9 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 	tmp29 := make(sliceValue[*jsonSomeOtherModel], 0, len(src.ModelPtrSliceField))
 	for _, el := range src.ModelPtrSliceField {
 		if el != nil {
-
 			tmp30, err := convertSomeOtherModelToJsonModel(el)
 			if err != nil {
-				return nil, fmt.Errorf("convert SomeOtherModel to db: %w", err)
+				return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 			}
 			tmp29 = append(tmp29, tmp30)
 		} else {
@@ -256,7 +256,7 @@ func convertSomeModelToJsonModel(src *testservice.SomeModel) (*jsonSomeModel, er
 		}
 	}
 	result.OneOfPtrSliceField = tmp33
-	tmp35 := make(sliceValue[string], 0, len(src.SliceEnumField))
+	tmp35 := make(stringSliceValue, 0, len(src.SliceEnumField))
 	for _, el := range src.SliceEnumField {
 		tmp36, err := convertSomeEnumToDB(el)
 		if err != nil {
@@ -329,14 +329,12 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 	} else {
 		result.ModelPtrField = nil
 	}
-	// one-of from db
 	tmp47, err := convertSomeOneOfFromDB(src.OneOfField)
 	if err != nil {
 		return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 	}
 	result.OneOfField = tmp47
 	if src.OneOfPtrField != nil {
-		// one-of from db
 		tmp48, err := convertSomeOneOfFromDB(src.OneOfPtrField)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
@@ -345,7 +343,6 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 	} else {
 		result.OneOfPtrField = nil
 	}
-	// enum from db
 	tmp49, err := convertSomeEnumFromDB(src.EnumField)
 	if err != nil {
 		return nil, err
@@ -354,14 +351,12 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 	if src.EnumPtrField == nil {
 		result.EnumPtrField = nil
 	} else {
-		// enum from db
 		tmp51, err := convertSomeEnumFromDB(fromPtr(src.EnumPtrField))
 		if err != nil {
 			return nil, err
 		}
 		result.EnumPtrField = toPtr(tmp51)
 	}
-	// model/any ptr from db
 	if src.AnyField != nil {
 		var tmp52 any
 		if err := json.Unmarshal([]byte(*src.AnyField), &tmp52); err != nil {
@@ -374,17 +369,14 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 	if src.AnyPtrField == nil {
 		result.AnyPtrField = nil
 	} else {
-		// model/any from db
 		var tmp54 any
 		if err := json.Unmarshal([]byte(fromPtr(src.AnyPtrField)), &tmp54); err != nil {
 			return nil, err
 		}
 		result.AnyPtrField = toPtr(tmp54)
 	}
-	// map from db
 	tmp55 := make(map[string]testservice.SomeOtherModel, len(src.MapModelField))
 	for k8, v8 := range src.MapModelField {
-
 		tmp56, err := convertSomeOtherModelFromJsonModel(toPtr(v8))
 		if err != nil {
 			return nil, err
@@ -393,10 +385,8 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp55[k8] = fromPtr(tmp56)
 	}
 	result.MapModelField = tmp55
-	// map from db
 	tmp57 := make(map[string]*testservice.SomeOtherModel, len(src.MapModelPtrField))
 	for k9, v9 := range src.MapModelPtrField {
-
 		if v9 != nil {
 			tmp58, err := convertSomeOtherModelFromJsonModel(v9)
 			if err != nil {
@@ -408,11 +398,8 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.MapModelPtrField = tmp57
-	// map from db
 	tmp59 := make(map[string]testservice.SomeOneOf, len(src.MapOneOfField))
 	for k10, v10 := range src.MapOneOfField {
-
-		// one-of from db
 		tmp60, err := convertSomeOneOfFromDB(v10)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
@@ -420,12 +407,9 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp59[k10] = tmp60
 	}
 	result.MapOneOfField = tmp59
-	// map from db
 	tmp61 := make(map[string]*testservice.SomeOneOf, len(src.MapOneOfPtrField))
 	for k11, v11 := range src.MapOneOfPtrField {
-
 		if v11 != nil {
-			// one-of from db
 			tmp62, err := convertSomeOneOfFromDB(v11)
 			if err != nil {
 				return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
@@ -436,11 +420,8 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.MapOneOfPtrField = tmp61
-	// map from db
 	tmp63 := make(map[string]testservice.SomeEnum, len(src.MapEnumField))
 	for k12, v12 := range src.MapEnumField {
-
-		// enum from db
 		tmp64, err := convertSomeEnumFromDB(v12)
 		if err != nil {
 			return nil, err
@@ -448,14 +429,11 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp63[k12] = tmp64
 	}
 	result.MapEnumField = tmp63
-	// map from db
 	tmp65 := make(map[string]*testservice.SomeEnum, len(src.MapEnumPtrField))
 	for k13, v13 := range src.MapEnumPtrField {
-
 		if v13 == nil {
 			tmp65[k13] = nil
 		} else {
-			// enum from db
 			tmp67, err := convertSomeEnumFromDB(fromPtr(v13))
 			if err != nil {
 				return nil, err
@@ -464,11 +442,8 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.MapEnumPtrField = tmp65
-	// map from db
 	tmp68 := make(map[string]any, len(src.MapAnyField))
 	for k14, v14 := range src.MapAnyField {
-
-		// model/any ptr from db
 		if v14 != nil {
 			var tmp69 any
 			if err := json.Unmarshal([]byte(*v14), &tmp69); err != nil {
@@ -480,14 +455,11 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.MapAnyField = tmp68
-	// map from db
 	tmp70 := make(map[string]*any, len(src.MapAnyPtrField))
 	for k15, v15 := range src.MapAnyPtrField {
-
 		if v15 == nil {
 			tmp70[k15] = nil
 		} else {
-			// model/any from db
 			var tmp72 any
 			if err := json.Unmarshal([]byte(fromPtr(v15)), &tmp72); err != nil {
 				return nil, err
@@ -496,7 +468,6 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.MapAnyPtrField = tmp70
-	// slice from db
 	tmp73 := make([]testservice.SomeOtherModel, 0, len(src.ModelSliceField))
 	for _, el := range src.ModelSliceField {
 
@@ -508,7 +479,6 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp73 = append(tmp73, fromPtr(tmp74))
 	}
 	result.ModelSliceField = tmp73
-	// slice from db
 	tmp75 := make([]*testservice.SomeOtherModel, 0, len(src.ModelPtrSliceField))
 	for _, el := range src.ModelPtrSliceField {
 
@@ -523,11 +493,9 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.ModelPtrSliceField = tmp75
-	// slice from db
 	tmp77 := make([]testservice.SomeOneOf, 0, len(src.OneOfSliceField))
 	for _, el := range src.OneOfSliceField {
 
-		// one-of from db
 		tmp78, err := convertSomeOneOfFromDB(el)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
@@ -535,12 +503,10 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp77 = append(tmp77, tmp78)
 	}
 	result.OneOfSliceField = tmp77
-	// slice from db
 	tmp79 := make([]*testservice.SomeOneOf, 0, len(src.OneOfPtrSliceField))
 	for _, el := range src.OneOfPtrSliceField {
 
 		if el != nil {
-			// one-of from db
 			tmp80, err := convertSomeOneOfFromDB(el)
 			if err != nil {
 				return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
@@ -551,11 +517,9 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.OneOfPtrSliceField = tmp79
-	// slice from db
 	tmp81 := make([]testservice.SomeEnum, 0, len(src.SliceEnumField))
 	for _, el := range src.SliceEnumField {
 
-		// enum from db
 		tmp82, err := convertSomeEnumFromDB(el)
 		if err != nil {
 			return nil, err
@@ -563,14 +527,12 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		tmp81 = append(tmp81, tmp82)
 	}
 	result.SliceEnumField = tmp81
-	// slice from db
 	tmp83 := make([]*testservice.SomeEnum, 0, len(src.SliceEnumPtrField))
 	for _, el := range src.SliceEnumPtrField {
 
 		if el == nil {
 			tmp83 = append(tmp83, nil)
 		} else {
-			// enum from db
 			tmp85, err := convertSomeEnumFromDB(fromPtr(el))
 			if err != nil {
 				return nil, err
@@ -579,11 +541,9 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.SliceEnumPtrField = tmp83
-	// slice from db
 	tmp86 := make([]any, 0, len(src.SliceAnyField))
 	for _, el := range src.SliceAnyField {
 
-		// model/any ptr from db
 		if el != nil {
 			var tmp87 any
 			if err := json.Unmarshal([]byte(*el), &tmp87); err != nil {
@@ -595,14 +555,12 @@ func convertSomeModelFromJsonModel(src *jsonSomeModel) (*testservice.SomeModel, 
 		}
 	}
 	result.SliceAnyField = tmp86
-	// slice from db
 	tmp88 := make([]*any, 0, len(src.SliceAnyPtrField))
 	for _, el := range src.SliceAnyPtrField {
 
 		if el == nil {
 			tmp88 = append(tmp88, nil)
 		} else {
-			// model/any from db
 			var tmp90 any
 			if err := json.Unmarshal([]byte(fromPtr(el)), &tmp90); err != nil {
 				return nil, err
@@ -715,7 +673,6 @@ func convertPasswordRecoveryEventToJsonModel(src *testservice.PasswordRecoveryEv
 func convertPasswordRecoveryEventFromJsonModel(src *jsonPasswordRecoveryEvent) (*testservice.PasswordRecoveryEvent, error) {
 	result := &testservice.PasswordRecoveryEvent{}
 	result.ID = src.ID
-	// one-of from db
 	tmp4, err := convertPasswordRecoveryEventDataFromDB(src.Data)
 	if err != nil {
 		return nil, fmt.Errorf("convert PasswordRecoveryEventData to service type: %w", err)
@@ -758,7 +715,6 @@ func convertPasswordRecoveryRequestedEventDataFromJsonModel(src *jsonPasswordRec
 	result.Email = src.Email
 	result.UserID = src.UserID
 	result.VerificationCode = src.VerificationCode
-	// one-of from db
 	tmp7, err := convertPasswordRecoveryEventDataFromDB(src.NestedData)
 	if err != nil {
 		return nil, fmt.Errorf("convert PasswordRecoveryEventData to service type: %w", err)

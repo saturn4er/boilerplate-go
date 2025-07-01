@@ -4,8 +4,6 @@ import (
 	context "context"
 
 	logging "github.com/go-pnp/go-pnp/logging"
-	pgconn "github.com/jackc/pgx/v5/pgconn"
-	errors "github.com/pkg/errors"
 	gorm "gorm.io/gorm"
 	clause "gorm.io/gorm/clause"
 
@@ -13,6 +11,8 @@ import (
 	idempotency "github.com/saturn4er/boilerplate-go/lib/idempotency"
 	txoutbox "github.com/saturn4er/boilerplate-go/lib/txoutbox"
 	testsvc "github.com/saturn4er/boilerplate-go/test/test/testservice"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 type Storages struct {
@@ -50,33 +50,14 @@ func NewStorages(db *gorm.DB, logger *logging.Logger) *Storages {
 
 func NewSomeModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeModelsStorage {
 	return dbutil.GormEntityStorage[testsvc.SomeModel, dbSomeModel, testsvc.SomeModelFilter]{
-		Logger: logger,
-		DB:     db,
-		DBErrorsWrapper: func(err error) error {
-			if err == nil {
-				return nil
-			}
-
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return testsvc.ErrSomeModelNotFound
-			}
-
-			var pgErr *pgconn.PgError
-
-			if errors.As(err, &pgErr) {
-				if pgErr.Code == "23505" {
-					return testsvc.ErrSomeModelAlreadyExists
-				}
-			}
-
-			// user code 'SomeModel errors mapping'
-			// end user code 'SomeModel errors mapping'
-
-			return err
+		Logger:            logger,
+		DB:                db,
+		DBErrorsWrapper:   wrapSomeModelQueryError,
+		ConvertToInternal: convertSomeModelToDB,
+		ConvertToExternal: convertSomeModelFromDB,
+		BuildFilterExpression: func(filter *testsvc.SomeModelFilter) (clause.Expression, error) {
+			return buildSomeModelFilterExpr(filter)
 		},
-		ConvertToInternal:     convertSomeModelToDB,
-		ConvertToExternal:     convertSomeModelFromDB,
-		BuildFilterExpression: buildSomeModelFilterExpr,
 		FieldMapping: map[any]clause.Column{
 			testsvc.SomeModelFieldID:                 {Name: "id"},
 			testsvc.SomeModelFieldModelField:         {Name: "model_field"},
@@ -109,33 +90,14 @@ func NewSomeModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeModel
 
 func NewSomeOtherModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeOtherModelsStorage {
 	return dbutil.GormEntityStorage[testsvc.SomeOtherModel, dbSomeOtherModel, testsvc.SomeOtherModelFilter]{
-		Logger: logger,
-		DB:     db,
-		DBErrorsWrapper: func(err error) error {
-			if err == nil {
-				return nil
-			}
-
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return testsvc.ErrSomeOtherModelNotFound
-			}
-
-			var pgErr *pgconn.PgError
-
-			if errors.As(err, &pgErr) {
-				if pgErr.Code == "23505" {
-					return testsvc.ErrSomeOtherModelAlreadyExists
-				}
-			}
-
-			// user code 'SomeOtherModel errors mapping'
-			// end user code 'SomeOtherModel errors mapping'
-
-			return err
+		Logger:            logger,
+		DB:                db,
+		DBErrorsWrapper:   wrapSomeOtherModelQueryError,
+		ConvertToInternal: convertSomeOtherModelToDB,
+		ConvertToExternal: convertSomeOtherModelFromDB,
+		BuildFilterExpression: func(filter *testsvc.SomeOtherModelFilter) (clause.Expression, error) {
+			return buildSomeOtherModelFilterExpr(filter)
 		},
-		ConvertToInternal:     convertSomeOtherModelToDB,
-		ConvertToExternal:     convertSomeOtherModelFromDB,
-		BuildFilterExpression: buildSomeOtherModelFilterExpr,
 		FieldMapping: map[any]clause.Column{
 			testsvc.SomeOtherModelFieldID: {Name: "id"},
 		},

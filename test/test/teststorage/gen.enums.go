@@ -4,6 +4,8 @@ import (
 	fmt "fmt"
 
 	testservice "github.com/saturn4er/boilerplate-go/test/test/testservice"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 const (

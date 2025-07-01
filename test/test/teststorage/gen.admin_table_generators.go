@@ -10,6 +10,8 @@ import (
 	table "github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
 	types "github.com/GoAdminGroup/go-admin/template/types"
 	form "github.com/GoAdminGroup/go-admin/template/types/form"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 func NewTableGenerators() table.GeneratorList {
