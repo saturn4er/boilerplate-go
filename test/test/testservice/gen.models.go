@@ -4,16 +4,49 @@ import (
 	uuid "github.com/google/uuid"
 
 	filter "github.com/saturn4er/boilerplate-go/lib/filter"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 type SomeOneOf interface {
 	isSomeOneOf()
+	SomeOneOfEquals(SomeOneOf) bool
 	// user code 'SomeOneOf methods'
 	// end user code 'SomeOneOf methods'
 }
 
 func (*OneOfValue1) isSomeOneOf() {}
+func (o *OneOfValue1) SomeOneOfEquals(to SomeOneOf) bool {
+	if (o == nil) != (to == nil) {
+		return false
+	}
+	if o == nil && to == nil {
+		return true
+	}
+
+	toTyped, ok := to.(*OneOfValue1)
+	if !ok {
+		return false
+	}
+
+	return o.Equals(toTyped)
+}
 func (*OneOfValue2) isSomeOneOf() {}
+func (o *OneOfValue2) SomeOneOfEquals(to SomeOneOf) bool {
+	if (o == nil) != (to == nil) {
+		return false
+	}
+	if o == nil && to == nil {
+		return true
+	}
+
+	toTyped, ok := to.(*OneOfValue2)
+	if !ok {
+		return false
+	}
+
+	return o.Equals(toTyped)
+}
 
 func copySomeOneOf(val SomeOneOf) SomeOneOf {
 	if val == nil {
@@ -33,12 +66,43 @@ func copySomeOneOf(val SomeOneOf) SomeOneOf {
 
 type PasswordRecoveryEventData interface {
 	isPasswordRecoveryEventData()
+	PasswordRecoveryEventDataEquals(PasswordRecoveryEventData) bool
 	// user code 'PasswordRecoveryEventData methods'
 	// end user code 'PasswordRecoveryEventData methods'
 }
 
 func (*PasswordRecoveryRequestedEventData) isPasswordRecoveryEventData() {}
+func (p *PasswordRecoveryRequestedEventData) PasswordRecoveryEventDataEquals(to PasswordRecoveryEventData) bool {
+	if (p == nil) != (to == nil) {
+		return false
+	}
+	if p == nil && to == nil {
+		return true
+	}
+
+	toTyped, ok := to.(*PasswordRecoveryRequestedEventData)
+	if !ok {
+		return false
+	}
+
+	return p.Equals(toTyped)
+}
 func (*PasswordRecoveryCompletedEventData) isPasswordRecoveryEventData() {}
+func (p *PasswordRecoveryCompletedEventData) PasswordRecoveryEventDataEquals(to PasswordRecoveryEventData) bool {
+	if (p == nil) != (to == nil) {
+		return false
+	}
+	if p == nil && to == nil {
+		return true
+	}
+
+	toTyped, ok := to.(*PasswordRecoveryCompletedEventData)
+	if !ok {
+		return false
+	}
+
+	return p.Equals(toTyped)
+}
 
 func copyPasswordRecoveryEventData(val PasswordRecoveryEventData) PasswordRecoveryEventData {
 	if val == nil {
@@ -122,7 +186,8 @@ type SomeModel struct {
 
 // user code 'SomeModel methods'
 // end user code 'SomeModel methods'
-func (s SomeModel) Copy() SomeModel {
+
+func (s *SomeModel) Copy() SomeModel {
 	var result SomeModel
 	result.ID = s.ID
 	result.ModelField = s.ModelField.Copy() // model
@@ -312,6 +377,279 @@ func (s SomeModel) Copy() SomeModel {
 
 	return result
 }
+func (s *SomeModel) Equals(to *SomeModel) bool {
+	if (s == nil) != (to == nil) {
+		return false
+	}
+	if s == nil && to == nil {
+		return true
+	}
+	if s.ID != to.ID {
+		return false
+	}
+	if !s.ModelField.Equals(&to.ModelField) {
+		return false
+	}
+	if (s.ModelPtrField == nil) != (to.ModelPtrField == nil) {
+		return false
+	}
+	if s.ModelPtrField != nil && to.ModelPtrField != nil {
+		if !(*s.ModelPtrField).Equals(&(*to.ModelPtrField)) {
+			return false
+		}
+	}
+	if !s.OneOfField.SomeOneOfEquals(to.OneOfField) {
+		return false
+	}
+	if (s.OneOfPtrField == nil) != (to.OneOfPtrField == nil) {
+		return false
+	}
+	if s.OneOfPtrField != nil && to.OneOfPtrField != nil {
+		if !(*s.OneOfPtrField).SomeOneOfEquals((*to.OneOfPtrField)) {
+			return false
+		}
+	}
+	if s.EnumField != to.EnumField {
+		return false
+	}
+	if (s.EnumPtrField == nil) != (to.EnumPtrField == nil) {
+		return false
+	}
+	if s.EnumPtrField != nil && to.EnumPtrField != nil {
+		if (*s.EnumPtrField) != (*to.EnumPtrField) {
+			return false
+		}
+	}
+	if s.AnyField != to.AnyField {
+		return false
+	}
+	if (s.AnyPtrField == nil) != (to.AnyPtrField == nil) {
+		return false
+	}
+	if s.AnyPtrField != nil && to.AnyPtrField != nil {
+		if (*s.AnyPtrField) != (*to.AnyPtrField) {
+			return false
+		}
+	}
+	// map comparision
+	if len(s.MapModelField) != len(to.MapModelField) {
+		return false
+	}
+	for k := range s.MapModelField {
+		valB, ok := to.MapModelField[k]
+		if !ok {
+			return false
+		}
+		valA := s.MapModelField[k]
+		if !valA.Equals(&valB) {
+			return false
+		}
+	}
+	// map comparision
+	if len(s.MapModelPtrField) != len(to.MapModelPtrField) {
+		return false
+	}
+	for k1 := range s.MapModelPtrField {
+		valB1, ok := to.MapModelPtrField[k1]
+		if !ok {
+			return false
+		}
+		valA1 := s.MapModelPtrField[k1]
+		if (valA1 == nil) != (valB1 == nil) {
+			return false
+		}
+		if valA1 != nil && valB1 != nil {
+			if !(*valA1).Equals(&(*valB1)) {
+				return false
+			}
+		}
+	}
+	// map comparision
+	if len(s.MapOneOfField) != len(to.MapOneOfField) {
+		return false
+	}
+	for k2 := range s.MapOneOfField {
+		valB2, ok := to.MapOneOfField[k2]
+		if !ok {
+			return false
+		}
+		valA2 := s.MapOneOfField[k2]
+		if !valA2.SomeOneOfEquals(valB2) {
+			return false
+		}
+	}
+	// map comparision
+	if len(s.MapOneOfPtrField) != len(to.MapOneOfPtrField) {
+		return false
+	}
+	for k3 := range s.MapOneOfPtrField {
+		valB3, ok := to.MapOneOfPtrField[k3]
+		if !ok {
+			return false
+		}
+		valA3 := s.MapOneOfPtrField[k3]
+		if (valA3 == nil) != (valB3 == nil) {
+			return false
+		}
+		if valA3 != nil && valB3 != nil {
+			if !(*valA3).SomeOneOfEquals((*valB3)) {
+				return false
+			}
+		}
+	}
+	// map comparision
+	if len(s.MapEnumField) != len(to.MapEnumField) {
+		return false
+	}
+	for k4 := range s.MapEnumField {
+		valB4, ok := to.MapEnumField[k4]
+		if !ok {
+			return false
+		}
+		valA4 := s.MapEnumField[k4]
+		if valA4 != valB4 {
+			return false
+		}
+	}
+	// map comparision
+	if len(s.MapEnumPtrField) != len(to.MapEnumPtrField) {
+		return false
+	}
+	for k5 := range s.MapEnumPtrField {
+		valB5, ok := to.MapEnumPtrField[k5]
+		if !ok {
+			return false
+		}
+		valA5 := s.MapEnumPtrField[k5]
+		if (valA5 == nil) != (valB5 == nil) {
+			return false
+		}
+		if valA5 != nil && valB5 != nil {
+			if (*valA5) != (*valB5) {
+				return false
+			}
+		}
+	}
+	// map comparision
+	if len(s.MapAnyField) != len(to.MapAnyField) {
+		return false
+	}
+	for k6 := range s.MapAnyField {
+		valB6, ok := to.MapAnyField[k6]
+		if !ok {
+			return false
+		}
+		valA6 := s.MapAnyField[k6]
+		if valA6 != valB6 {
+			return false
+		}
+	}
+	// map comparision
+	if len(s.MapAnyPtrField) != len(to.MapAnyPtrField) {
+		return false
+	}
+	for k7 := range s.MapAnyPtrField {
+		valB7, ok := to.MapAnyPtrField[k7]
+		if !ok {
+			return false
+		}
+		valA7 := s.MapAnyPtrField[k7]
+		if (valA7 == nil) != (valB7 == nil) {
+			return false
+		}
+		if valA7 != nil && valB7 != nil {
+			if (*valA7) != (*valB7) {
+				return false
+			}
+		}
+	}
+	if len(s.ModelSliceField) != len(to.ModelSliceField) {
+		return false
+	}
+	for i := range s.ModelSliceField {
+		if !s.ModelSliceField[i].Equals(&to.ModelSliceField[i]) {
+			return false
+		}
+	}
+	if len(s.ModelPtrSliceField) != len(to.ModelPtrSliceField) {
+		return false
+	}
+	for i1 := range s.ModelPtrSliceField {
+		if (s.ModelPtrSliceField[i1] == nil) != (to.ModelPtrSliceField[i1] == nil) {
+			return false
+		}
+		if s.ModelPtrSliceField[i1] != nil && to.ModelPtrSliceField[i1] != nil {
+			if !(*s.ModelPtrSliceField[i1]).Equals(&(*to.ModelPtrSliceField[i1])) {
+				return false
+			}
+		}
+	}
+	if len(s.OneOfSliceField) != len(to.OneOfSliceField) {
+		return false
+	}
+	for i2 := range s.OneOfSliceField {
+		if !s.OneOfSliceField[i2].SomeOneOfEquals(to.OneOfSliceField[i2]) {
+			return false
+		}
+	}
+	if len(s.OneOfPtrSliceField) != len(to.OneOfPtrSliceField) {
+		return false
+	}
+	for i3 := range s.OneOfPtrSliceField {
+		if (s.OneOfPtrSliceField[i3] == nil) != (to.OneOfPtrSliceField[i3] == nil) {
+			return false
+		}
+		if s.OneOfPtrSliceField[i3] != nil && to.OneOfPtrSliceField[i3] != nil {
+			if !(*s.OneOfPtrSliceField[i3]).SomeOneOfEquals((*to.OneOfPtrSliceField[i3])) {
+				return false
+			}
+		}
+	}
+	if len(s.SliceEnumField) != len(to.SliceEnumField) {
+		return false
+	}
+	for i4 := range s.SliceEnumField {
+		if s.SliceEnumField[i4] != to.SliceEnumField[i4] {
+			return false
+		}
+	}
+	if len(s.SliceEnumPtrField) != len(to.SliceEnumPtrField) {
+		return false
+	}
+	for i5 := range s.SliceEnumPtrField {
+		if (s.SliceEnumPtrField[i5] == nil) != (to.SliceEnumPtrField[i5] == nil) {
+			return false
+		}
+		if s.SliceEnumPtrField[i5] != nil && to.SliceEnumPtrField[i5] != nil {
+			if (*s.SliceEnumPtrField[i5]) != (*to.SliceEnumPtrField[i5]) {
+				return false
+			}
+		}
+	}
+	if len(s.SliceAnyField) != len(to.SliceAnyField) {
+		return false
+	}
+	for i6 := range s.SliceAnyField {
+		if s.SliceAnyField[i6] != to.SliceAnyField[i6] {
+			return false
+		}
+	}
+	if len(s.SliceAnyPtrField) != len(to.SliceAnyPtrField) {
+		return false
+	}
+	for i7 := range s.SliceAnyPtrField {
+		if (s.SliceAnyPtrField[i7] == nil) != (to.SliceAnyPtrField[i7] == nil) {
+			return false
+		}
+		if s.SliceAnyPtrField[i7] != nil && to.SliceAnyPtrField[i7] != nil {
+			if (*s.SliceAnyPtrField[i7]) != (*to.SliceAnyPtrField[i7]) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
 
 type SomeOtherModelField byte
 
@@ -331,11 +669,36 @@ type SomeOtherModel struct {
 
 // user code 'SomeOtherModel methods'
 // end user code 'SomeOtherModel methods'
-func (s SomeOtherModel) Copy() SomeOtherModel {
+
+func (s *SomeOtherModel) Copy() SomeOtherModel {
 	var result SomeOtherModel
 	result.ID = s.ID
 
 	return result
+}
+func (s *SomeOtherModel) Equals(to *SomeOtherModel) bool {
+	if (s == nil) != (to == nil) {
+		return false
+	}
+	if s == nil && to == nil {
+		return true
+	}
+	if s.ID != to.ID {
+		return false
+	}
+
+	return true
+}
+
+type OneOfValue1Field byte
+
+const (
+	OneOfValue1FieldValue OneOfValue1Field = iota + 1
+)
+
+type OneOfValue1Filter struct {
+	Or  []*OneOfValue1Filter
+	And []*OneOfValue1Filter
 }
 
 type OneOfValue1 struct {
@@ -344,11 +707,36 @@ type OneOfValue1 struct {
 
 // user code 'OneOfValue1 methods'
 // end user code 'OneOfValue1 methods'
-func (o OneOfValue1) Copy() OneOfValue1 {
+
+func (o *OneOfValue1) Copy() OneOfValue1 {
 	var result OneOfValue1
 	result.Value = o.Value
 
 	return result
+}
+func (o *OneOfValue1) Equals(to *OneOfValue1) bool {
+	if (o == nil) != (to == nil) {
+		return false
+	}
+	if o == nil && to == nil {
+		return true
+	}
+	if o.Value != to.Value {
+		return false
+	}
+
+	return true
+}
+
+type OneOfValue2Field byte
+
+const (
+	OneOfValue2FieldValue OneOfValue2Field = iota + 1
+)
+
+type OneOfValue2Filter struct {
+	Or  []*OneOfValue2Filter
+	And []*OneOfValue2Filter
 }
 
 type OneOfValue2 struct {
@@ -357,11 +745,25 @@ type OneOfValue2 struct {
 
 // user code 'OneOfValue2 methods'
 // end user code 'OneOfValue2 methods'
-func (o OneOfValue2) Copy() OneOfValue2 {
+
+func (o *OneOfValue2) Copy() OneOfValue2 {
 	var result OneOfValue2
 	result.Value = o.Value
 
 	return result
+}
+func (o *OneOfValue2) Equals(to *OneOfValue2) bool {
+	if (o == nil) != (to == nil) {
+		return false
+	}
+	if o == nil && to == nil {
+		return true
+	}
+	if o.Value != to.Value {
+		return false
+	}
+
+	return true
 }
 
 type PasswordRecoveryEventField byte
@@ -385,13 +787,48 @@ type PasswordRecoveryEvent struct {
 
 // user code 'PasswordRecoveryEvent methods'
 // end user code 'PasswordRecoveryEvent methods'
-func (p PasswordRecoveryEvent) Copy() PasswordRecoveryEvent {
+
+func (p *PasswordRecoveryEvent) Copy() PasswordRecoveryEvent {
 	var result PasswordRecoveryEvent
 	result.ID = p.ID
 	result.Data = copyPasswordRecoveryEventData(p.Data)
 	result.IdempotencyKey = p.IdempotencyKey
 
 	return result
+}
+func (p *PasswordRecoveryEvent) Equals(to *PasswordRecoveryEvent) bool {
+	if (p == nil) != (to == nil) {
+		return false
+	}
+	if p == nil && to == nil {
+		return true
+	}
+	if p.ID != to.ID {
+		return false
+	}
+	if !p.Data.PasswordRecoveryEventDataEquals(to.Data) {
+		return false
+	}
+	if p.IdempotencyKey != to.IdempotencyKey {
+		return false
+	}
+
+	return true
+}
+
+type PasswordRecoveryRequestedEventDataField byte
+
+const (
+	PasswordRecoveryRequestedEventDataFieldEmail PasswordRecoveryRequestedEventDataField = iota + 1
+	PasswordRecoveryRequestedEventDataFieldUserID
+	PasswordRecoveryRequestedEventDataFieldVerificationCode
+	PasswordRecoveryRequestedEventDataFieldNestedData
+)
+
+type PasswordRecoveryRequestedEventDataFilter struct {
+	UserID filter.Filter[uuid.UUID]
+	Or     []*PasswordRecoveryRequestedEventDataFilter
+	And    []*PasswordRecoveryRequestedEventDataFilter
 }
 
 type PasswordRecoveryRequestedEventData struct {
@@ -403,7 +840,8 @@ type PasswordRecoveryRequestedEventData struct {
 
 // user code 'PasswordRecoveryRequestedEventData methods'
 // end user code 'PasswordRecoveryRequestedEventData methods'
-func (p PasswordRecoveryRequestedEventData) Copy() PasswordRecoveryRequestedEventData {
+
+func (p *PasswordRecoveryRequestedEventData) Copy() PasswordRecoveryRequestedEventData {
 	var result PasswordRecoveryRequestedEventData
 	result.Email = p.Email
 	result.UserID = p.UserID
@@ -411,6 +849,41 @@ func (p PasswordRecoveryRequestedEventData) Copy() PasswordRecoveryRequestedEven
 	result.NestedData = copyPasswordRecoveryEventData(p.NestedData)
 
 	return result
+}
+func (p *PasswordRecoveryRequestedEventData) Equals(to *PasswordRecoveryRequestedEventData) bool {
+	if (p == nil) != (to == nil) {
+		return false
+	}
+	if p == nil && to == nil {
+		return true
+	}
+	if p.Email != to.Email {
+		return false
+	}
+	if p.UserID != to.UserID {
+		return false
+	}
+	if p.VerificationCode != to.VerificationCode {
+		return false
+	}
+	if !p.NestedData.PasswordRecoveryEventDataEquals(to.NestedData) {
+		return false
+	}
+
+	return true
+}
+
+type PasswordRecoveryCompletedEventDataField byte
+
+const (
+	PasswordRecoveryCompletedEventDataFieldEmail PasswordRecoveryCompletedEventDataField = iota + 1
+	PasswordRecoveryCompletedEventDataFieldUserID
+)
+
+type PasswordRecoveryCompletedEventDataFilter struct {
+	UserID filter.Filter[uuid.UUID]
+	Or     []*PasswordRecoveryCompletedEventDataFilter
+	And    []*PasswordRecoveryCompletedEventDataFilter
 }
 
 type PasswordRecoveryCompletedEventData struct {
@@ -420,10 +893,27 @@ type PasswordRecoveryCompletedEventData struct {
 
 // user code 'PasswordRecoveryCompletedEventData methods'
 // end user code 'PasswordRecoveryCompletedEventData methods'
-func (p PasswordRecoveryCompletedEventData) Copy() PasswordRecoveryCompletedEventData {
+
+func (p *PasswordRecoveryCompletedEventData) Copy() PasswordRecoveryCompletedEventData {
 	var result PasswordRecoveryCompletedEventData
 	result.Email = p.Email
 	result.UserID = p.UserID
 
 	return result
+}
+func (p *PasswordRecoveryCompletedEventData) Equals(to *PasswordRecoveryCompletedEventData) bool {
+	if (p == nil) != (to == nil) {
+		return false
+	}
+	if p == nil && to == nil {
+		return true
+	}
+	if p.Email != to.Email {
+		return false
+	}
+	if p.UserID != to.UserID {
+		return false
+	}
+
+	return true
 }

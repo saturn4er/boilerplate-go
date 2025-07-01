@@ -6,16 +6,32 @@ import (
 
 	dbutil "github.com/saturn4er/boilerplate-go/lib/dbutil"
 	testservice "github.com/saturn4er/boilerplate-go/test/test/testservice"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
-func buildSomeModelFilterExpr(filter *testservice.SomeModelFilter) (clause.Expression, error) {
+type filterOptions struct {
+	columnPrefix string
+}
+
+func withFilterColumnPrefix(prefix string) func(*filterOptions) {
+	return func(f *filterOptions) {
+		f.columnPrefix = prefix
+	}
+}
+func buildSomeModelFilterExpr(filter *testservice.SomeModelFilter, options ...func(*filterOptions)) (clause.Expression, error) {
 	if filter == nil {
 		return nil, nil
 	}
 
+	opts := &filterOptions{}
+	for _, opt := range options {
+		opt(opts)
+	}
+
 	return dbutil.BuildFilterExpression(
 		dbutil.ColumnFilter[uuid.UUID]{
-			Column: "id",
+			Column: opts.columnPrefix + "id",
 			Filter: filter.ID,
 		},
 		dbutil.ExpressionBuilderFunc(func() (clause.Expression, error) {
@@ -48,14 +64,19 @@ func buildSomeModelFilterExpr(filter *testservice.SomeModelFilter) (clause.Expre
 		}),
 	)
 }
-func buildSomeOtherModelFilterExpr(filter *testservice.SomeOtherModelFilter) (clause.Expression, error) {
+func buildSomeOtherModelFilterExpr(filter *testservice.SomeOtherModelFilter, options ...func(*filterOptions)) (clause.Expression, error) {
 	if filter == nil {
 		return nil, nil
 	}
 
+	opts := &filterOptions{}
+	for _, opt := range options {
+		opt(opts)
+	}
+
 	return dbutil.BuildFilterExpression(
 		dbutil.ColumnFilter[uuid.UUID]{
-			Column: "id",
+			Column: opts.columnPrefix + "id",
 			Filter: filter.ID,
 		},
 		dbutil.ExpressionBuilderFunc(func() (clause.Expression, error) {
@@ -89,9 +110,14 @@ func buildSomeOtherModelFilterExpr(filter *testservice.SomeOtherModelFilter) (cl
 	)
 }
 
-func buildPasswordRecoveryEventFilterExpr(filter *testservice.PasswordRecoveryEventFilter) (clause.Expression, error) {
+func buildPasswordRecoveryEventFilterExpr(filter *testservice.PasswordRecoveryEventFilter, options ...func(*filterOptions)) (clause.Expression, error) {
 	if filter == nil {
 		return nil, nil
+	}
+
+	opts := &filterOptions{}
+	for _, opt := range options {
+		opt(opts)
 	}
 
 	return dbutil.BuildFilterExpression(

@@ -5,7 +5,11 @@ import (
 	json "encoding/json"
 	fmt "fmt"
 
+	errors "github.com/pkg/errors"
+
 	testservice "github.com/saturn4er/boilerplate-go/test/test/testservice"
+	// user code 'imports'
+	// end user code 'imports'
 )
 
 type jsonSomeOneOf struct {
@@ -59,10 +63,9 @@ func convertSomeOneOfToDB(val testservice.SomeOneOf) (*jsonSomeOneOf, error) {
 	switch v := val.(type) {
 	case *testservice.OneOfValue1:
 		if v != nil {
-
 			tmp, err := convertOneOfValue1ToJsonModel(v)
 			if err != nil {
-				return nil, fmt.Errorf("convert OneOfValue1 to db: %w", err)
+				return nil, errors.Wrap(err, "convert OneOfValue1 to db")
 			}
 			result.Val = tmp
 		} else {
@@ -74,10 +77,9 @@ func convertSomeOneOfToDB(val testservice.SomeOneOf) (*jsonSomeOneOf, error) {
 		return result, nil
 	case *testservice.OneOfValue2:
 		if v != nil {
-
 			tmp, err := convertOneOfValue2ToJsonModel(v)
 			if err != nil {
-				return nil, fmt.Errorf("convert OneOfValue2 to db: %w", err)
+				return nil, errors.Wrap(err, "convert OneOfValue2 to db")
 			}
 			result.Val = tmp
 		} else {
@@ -169,10 +171,9 @@ func convertPasswordRecoveryEventDataToDB(val testservice.PasswordRecoveryEventD
 	switch v := val.(type) {
 	case *testservice.PasswordRecoveryRequestedEventData:
 		if v != nil {
-
 			tmp, err := convertPasswordRecoveryRequestedEventDataToJsonModel(v)
 			if err != nil {
-				return nil, fmt.Errorf("convert PasswordRecoveryRequestedEventData to db: %w", err)
+				return nil, errors.Wrap(err, "convert PasswordRecoveryRequestedEventData to db")
 			}
 			result.Val = tmp
 		} else {
@@ -184,10 +185,9 @@ func convertPasswordRecoveryEventDataToDB(val testservice.PasswordRecoveryEventD
 		return result, nil
 	case *testservice.PasswordRecoveryCompletedEventData:
 		if v != nil {
-
 			tmp, err := convertPasswordRecoveryCompletedEventDataToJsonModel(v)
 			if err != nil {
-				return nil, fmt.Errorf("convert PasswordRecoveryCompletedEventData to db: %w", err)
+				return nil, errors.Wrap(err, "convert PasswordRecoveryCompletedEventData to db")
 			}
 			result.Val = tmp
 		} else {
