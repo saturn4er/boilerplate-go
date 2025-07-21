@@ -43,6 +43,8 @@ func ArrayFilterExpression[T, V any](value filter.ArrayFilter[T], column string,
 		return arrayContainsFilterGormCondition(typedValue, column, mapper)
 	case *filter.ArrayContainsAnyFilter[T]:
 		return arrayContainsAnyFilterGormCondition(typedValue, column, mapper)
+	case *filter.ArrayIsEmptyFilter[T]:
+		return arrayIsEmptyFilterGormCondition(column)
 	default:
 		return nil, errors.Errorf("unsupported Filter type: %T", value)
 	}
@@ -82,4 +84,8 @@ func arrayContainsAnyFilterGormCondition[T, V any](containsFilter *filter.ArrayC
 	}
 
 	return clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(values)}}, nil
+}
+
+func arrayIsEmptyFilterGormCondition(column string) (clause.Expression, error) { //nolint:lll
+	return clause.Expr{SQL: fmt.Sprintf("cardinality(%s) = 0", column)}, nil
 }
