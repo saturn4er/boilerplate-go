@@ -7,9 +7,6 @@
 <><><>
 {{- $module := (index $.Config.Modules $.Module).Value }}
 {{- $fmtPkg := import "fmt" }}
-{{- $orderPkg := import "github.com/saturn4er/boilerplate-go/lib/order" -}}
-
-type OrderDirection = {{$orderPkg.Ref "Direction"}}
 
 {{- range $oneOf := $module.Types.OneOfs}}
   type {{$oneOf.Name}} interface{
