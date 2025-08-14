@@ -12,11 +12,6 @@
     {{$orderPkg.Ref "Order"}}[{{.}}]
 {{- end -}}
 
-{{- define "orderDirectionType" -}}
-    {{- $orderPkg := import "github.com/saturn4er/boilerplate-go/lib/order" -}}
-    type OrderDirection = {{$orderPkg.Ref "Direction"}}
-{{- end -}}
-
 {{- define "copy_value" }}
     {{- $input := index . 0 -}}
     {{- $goType := index . 1 -}}
