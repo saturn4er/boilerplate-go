@@ -8,7 +8,7 @@
 {{- $module := (index $.Config.Modules $.Module).Value }}
 {{- $fmtPkg := import "fmt" }}
 
-type OrderDirection = order.Direction
+{{ template "orderDirectionType" }}
 
 {{- range $oneOf := $module.Types.OneOfs}}
   type {{$oneOf.Name}} interface{
@@ -69,7 +69,7 @@ type OrderDirection = order.Direction
     Or []*{{$model.Name}}Filter
     And []*{{$model.Name}}Filter
     }
-    type {{$model.Name}}Order order.Order[{{$model.Name}}Field]
+    type {{$model.Name}}Order {{ template "orderType" (printf "%sField" $model.Name) }}
   {{- end }}
 
     type {{$model.Name}}{{if gt (len $model.TypeParameters) 0}}[{{range $model.TypeParameters}} {{.Name}} {{.Constraint}}{{end}}]{{end}} struct {
