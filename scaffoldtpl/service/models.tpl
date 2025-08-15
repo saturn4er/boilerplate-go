@@ -8,18 +8,6 @@
 {{- $module := (index $.Config.Modules $.Module).Value }}
 {{- $fmtPkg := import "fmt" }}
 
-type OrderDirection byte
-
-const (
-	OrderDirectionAsc = iota + 1
-	OrderDirectionDesc
-)
-
-type ModelOrder[FieldType ~byte] struct {
-	Field     FieldType
-	Direction OrderDirection
-}
-
 {{- range $oneOf := $module.Types.OneOfs}}
   type {{$oneOf.Name}} interface{
   is{{$oneOf.Name}}()
@@ -79,7 +67,7 @@ type ModelOrder[FieldType ~byte] struct {
     Or []*{{$model.Name}}Filter
     And []*{{$model.Name}}Filter
     }
-    type {{$model.Name}}Order ModelOrder[{{$model.Name}}Field]
+    type {{$model.Name}}Order {{ template "orderType" (printf "%sField" $model.Name) }}
   {{- end }}
 
     type {{$model.Name}}{{if gt (len $model.TypeParameters) 0}}[{{range $model.TypeParameters}} {{.Name}} {{.Constraint}}{{end}}]{{end}} struct {
