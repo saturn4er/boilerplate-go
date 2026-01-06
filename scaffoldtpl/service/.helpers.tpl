@@ -7,6 +7,11 @@
     {{- end -}}
 {{- end }}
 
+{{- define "orderType" -}}
+    {{- $orderPkg := import "github.com/saturn4er/boilerplate-go/lib/order" -}}
+    {{$orderPkg.Ref "Order"}}[{{.}}]
+{{- end -}}
+
 {{- define "copy_value" }}
     {{- $input := index . 0 -}}
     {{- $goType := index . 1 -}}

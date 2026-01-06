@@ -3,6 +3,7 @@ package dbutil
 import (
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/gorm/clause"
 
@@ -37,16 +38,23 @@ func (c MappedColumnArrayFilter[T, V]) buildExpression() (clause.Expression, err
 }
 
 func ArrayFilterExpression[T, V any](value filter.ArrayFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
-	if typedValue, ok := value.(*filter.ArrayContainsFilter[T]); ok {
+	switch typedValue := value.(type) {
+	case *filter.ArrayContainsFilter[T]:
 		return arrayContainsFilterGormCondition(typedValue, column, mapper)
+	case *filter.ArrayContainsAnyFilter[T]:
+		return arrayContainsAnyFilterGormCondition(typedValue, column, mapper)
+	case *filter.ArrayIsEmptyFilter[T]:
+		return arrayIsEmptyFilterGormCondition(column)
+	case *filter.ArrayOrFilter[T]:
+		return arrayOrFilterGormCondition(typedValue, column, mapper)
+	default:
+		return nil, errors.Errorf("unsupported Filter type: %T", value)
 	}
-
-	return nil, errors.Errorf("unsupported Filter type: %T", value)
 }
 
 func arrayContainsFilterGormCondition[T, V any](containsFilter *filter.ArrayContainsFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) { //nolint:lll
 	if mapper == nil {
-		return clause.Expr{SQL: fmt.Sprintf("%s @> ?", column), Vars: []interface{}{containsFilter.Values}}, nil
+		return clause.Expr{SQL: fmt.Sprintf("%s @> ?", column), Vars: []interface{}{pq.Array(containsFilter.Values)}}, nil
 	}
 
 	values := make([]interface{}, 0, len(containsFilter.Values))
@@ -61,4 +69,40 @@ func arrayContainsFilterGormCondition[T, V any](containsFilter *filter.ArrayCont
 	}
 
 	return clause.Expr{SQL: fmt.Sprintf("%s @> ?", column), Vars: []interface{}{values}}, nil
+}
+
+func arrayContainsAnyFilterGormCondition[T, V any](containsFilter *filter.ArrayContainsAnyFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) { //nolint:lll
+	if mapper == nil {
+		return clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(containsFilter.Values)}}, nil
+	}
+
+	values := make([]V, 0, len(containsFilter.Values))
+	for _, val := range containsFilter.Values {
+		mappedValue, err := mapper(val)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, mappedValue)
+	}
+
+	return clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(values)}}, nil
+}
+
+func arrayIsEmptyFilterGormCondition(column string) (clause.Expression, error) { //nolint:lll
+	return clause.Expr{SQL: fmt.Sprintf("cardinality(%s) = 0", column)}, nil
+}
+
+func arrayOrFilterGormCondition[T, V any](orFilter *filter.ArrayOrFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
+	expressions := make([]clause.Expression, 0, len(orFilter.Filters))
+
+	for _, el := range orFilter.Filters {
+		expr, err := ArrayFilterExpression(el, column, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		expressions = append(expressions, expr)
+	}
+
+	return clause.Or(expressions...), nil
 }

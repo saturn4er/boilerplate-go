@@ -9,6 +9,7 @@
 {{- $jsonPkg := import "encoding/json" }}
 {{- $pq := import "github.com/lib/pq" }}
 {{- $errorsPkg := import "github.com/pkg/errors" -}}
+{{- $uuidPkg := import "github.com/google/uuid" -}}
 
 type mapValue[C comparable, B any] map[string]B
 
@@ -94,6 +95,34 @@ return err
 }
 
 return nil
+}
+
+type uuidSliceValue []{{$uuidPkg.Ref "UUID"}}
+
+func (s uuidSliceValue) Value() ({{$driverPkg.Ref "Value"}}, error) {
+	result := make({{$pq.Ref "StringArray"}}, len(s))
+	for i, u := range s {
+		result[i] = u.String()
+	}
+	return result.Value()
+}
+
+func (s *uuidSliceValue) Scan(src interface{}) error {
+	var result {{$pq.Ref "StringArray"}}
+	if err := result.Scan(src); err != nil {
+		return err
+	}
+
+	*s = make(uuidSliceValue, len(result))
+	for i, str := range result {
+		parsedUUID, err := {{$uuidPkg.Ref "Parse"}}(str)
+		if err != nil {
+			return err
+		}
+		(*s)[i] = parsedUUID
+	}
+
+	return nil
 }
 
 func fromPtr[T any](ptr *T) T {
