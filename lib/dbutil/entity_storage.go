@@ -233,7 +233,7 @@ func (s GormEntityStorage[ExtType, IntType, FilterType]) WithAdvisoryLock(ctx co
 	hasher.Write([]byte{':'})
 	hasher.Write(strconv.AppendInt(nil, lockID, 10))
 
-	result := s.DB.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	result := s.DB.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", int64(hasher.Sum64()))
 	if result.Error != nil {
 		return result.Error
 	}
