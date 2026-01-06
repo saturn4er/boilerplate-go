@@ -112,7 +112,7 @@ return &Storages{db: db, logger: logger}
                       {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
                   {{- end }}
                 },
-                LockScope:  "{{$model.PluralName}}",
+                LockScope:  "{{$.Module}}.{{$model.PluralName}}",
               },
               {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
             }
@@ -133,7 +133,7 @@ return &Storages{db: db, logger: logger}
                     {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
                 {{- end }}
               },
-              LockScope:  "{{$model.PluralName}}",
+              LockScope:  "{{$.Module}}.{{$model.PluralName}}",
             }
           }
         {{- end }}
