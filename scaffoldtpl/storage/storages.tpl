@@ -14,6 +14,9 @@
 {{ $clausePkg := import "gorm.io/gorm/clause" }}
 {{ $errorsPkg := import "github.com/pkg/errors" }}
 {{ $pgconnPkg := import "github.com/jackc/pgx/v5/pgconn"}}
+{{ $xxhashPkg := import "github.com/cespare/xxhash"}}
+{{ $strconvPkg := import "strconv" }}
+{{ $uuidPkg := import "github.com/google/uuid"}}
 {{ $contextPkg := import "context" }}
 {{ $servicePkg :=  import (print $.Config.RootPackageName "/" $.Module "/" $.Module "service") (print $.Module "svc") }}
 {{ $module := (index $.Config.Modules $.Module).Value}}
@@ -45,7 +48,23 @@ func (s Storages) IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}} {
   return {{$idempotencyPkg.Ref "GormStorage"}}{
     DB: s.db,
   }
+
 }
+
+func (s *Storages) WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID int64) error {
+	hasher := {{$xxhashPkg.Ref "New"}}()
+	hasher.Write([]byte(scope))
+	hasher.Write([]byte{':'})
+	hasher.Write({{$strconvPkg.Ref "AppendInt"}}(nil, lockID, 10))
+
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 func (s Storages) ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx {{$servicePkg.Ref "Storage"}}) error) error {
 return s.db.Transaction(func(tx *gorm.DB) error {
 return cb(ctx, &Storages{tx, s.logger})
@@ -93,6 +112,7 @@ return &Storages{db: db, logger: logger}
                       {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
                   {{- end }}
                 },
+                LockScope:  "{{$.Module}}.{{$model.PluralName}}",
               },
               {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
             }
@@ -113,6 +133,7 @@ return &Storages{db: db, logger: logger}
                     {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
                 {{- end }}
               },
+              LockScope:  "{{$.Module}}.{{$model.PluralName}}",
             }
           }
         {{- end }}
