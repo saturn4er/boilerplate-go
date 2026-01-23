@@ -90,7 +90,7 @@
       if len({{$aVal}}) != len({{$bVal}}){
         return false
       }
-      {{- $iVar := $varNamesGenerator.Var "i" }}
+      {{- $iVar := $varNamesGenerator.Var "idx" }}
       for {{$iVar}} := range {{$aVal}} {
         {{- $itemAVal := print $aVal "[" $iVar "]" }}
         {{- $itemBVal := print $bVal "[" $iVar "]" }}

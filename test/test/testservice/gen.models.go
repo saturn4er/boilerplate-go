@@ -568,20 +568,20 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 	if len(s.ModelSliceField) != len(to.ModelSliceField) {
 		return false
 	}
-	for i := range s.ModelSliceField {
-		if !s.ModelSliceField[i].Equals(&to.ModelSliceField[i]) {
+	for idx := range s.ModelSliceField {
+		if !s.ModelSliceField[idx].Equals(&to.ModelSliceField[idx]) {
 			return false
 		}
 	}
 	if len(s.ModelPtrSliceField) != len(to.ModelPtrSliceField) {
 		return false
 	}
-	for i1 := range s.ModelPtrSliceField {
-		if (s.ModelPtrSliceField[i1] == nil) != (to.ModelPtrSliceField[i1] == nil) {
+	for idx1 := range s.ModelPtrSliceField {
+		if (s.ModelPtrSliceField[idx1] == nil) != (to.ModelPtrSliceField[idx1] == nil) {
 			return false
 		}
-		if s.ModelPtrSliceField[i1] != nil && to.ModelPtrSliceField[i1] != nil {
-			if !(*s.ModelPtrSliceField[i1]).Equals(&(*to.ModelPtrSliceField[i1])) {
+		if s.ModelPtrSliceField[idx1] != nil && to.ModelPtrSliceField[idx1] != nil {
+			if !(*s.ModelPtrSliceField[idx1]).Equals(&(*to.ModelPtrSliceField[idx1])) {
 				return false
 			}
 		}
@@ -589,20 +589,20 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 	if len(s.OneOfSliceField) != len(to.OneOfSliceField) {
 		return false
 	}
-	for i2 := range s.OneOfSliceField {
-		if !s.OneOfSliceField[i2].SomeOneOfEquals(to.OneOfSliceField[i2]) {
+	for idx2 := range s.OneOfSliceField {
+		if !s.OneOfSliceField[idx2].SomeOneOfEquals(to.OneOfSliceField[idx2]) {
 			return false
 		}
 	}
 	if len(s.OneOfPtrSliceField) != len(to.OneOfPtrSliceField) {
 		return false
 	}
-	for i3 := range s.OneOfPtrSliceField {
-		if (s.OneOfPtrSliceField[i3] == nil) != (to.OneOfPtrSliceField[i3] == nil) {
+	for idx3 := range s.OneOfPtrSliceField {
+		if (s.OneOfPtrSliceField[idx3] == nil) != (to.OneOfPtrSliceField[idx3] == nil) {
 			return false
 		}
-		if s.OneOfPtrSliceField[i3] != nil && to.OneOfPtrSliceField[i3] != nil {
-			if !(*s.OneOfPtrSliceField[i3]).SomeOneOfEquals((*to.OneOfPtrSliceField[i3])) {
+		if s.OneOfPtrSliceField[idx3] != nil && to.OneOfPtrSliceField[idx3] != nil {
+			if !(*s.OneOfPtrSliceField[idx3]).SomeOneOfEquals((*to.OneOfPtrSliceField[idx3])) {
 				return false
 			}
 		}
@@ -610,20 +610,20 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 	if len(s.SliceEnumField) != len(to.SliceEnumField) {
 		return false
 	}
-	for i4 := range s.SliceEnumField {
-		if s.SliceEnumField[i4] != to.SliceEnumField[i4] {
+	for idx4 := range s.SliceEnumField {
+		if s.SliceEnumField[idx4] != to.SliceEnumField[idx4] {
 			return false
 		}
 	}
 	if len(s.SliceEnumPtrField) != len(to.SliceEnumPtrField) {
 		return false
 	}
-	for i5 := range s.SliceEnumPtrField {
-		if (s.SliceEnumPtrField[i5] == nil) != (to.SliceEnumPtrField[i5] == nil) {
+	for idx5 := range s.SliceEnumPtrField {
+		if (s.SliceEnumPtrField[idx5] == nil) != (to.SliceEnumPtrField[idx5] == nil) {
 			return false
 		}
-		if s.SliceEnumPtrField[i5] != nil && to.SliceEnumPtrField[i5] != nil {
-			if (*s.SliceEnumPtrField[i5]) != (*to.SliceEnumPtrField[i5]) {
+		if s.SliceEnumPtrField[idx5] != nil && to.SliceEnumPtrField[idx5] != nil {
+			if (*s.SliceEnumPtrField[idx5]) != (*to.SliceEnumPtrField[idx5]) {
 				return false
 			}
 		}
@@ -631,20 +631,20 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 	if len(s.SliceAnyField) != len(to.SliceAnyField) {
 		return false
 	}
-	for i6 := range s.SliceAnyField {
-		if s.SliceAnyField[i6] != to.SliceAnyField[i6] {
+	for idx6 := range s.SliceAnyField {
+		if s.SliceAnyField[idx6] != to.SliceAnyField[idx6] {
 			return false
 		}
 	}
 	if len(s.SliceAnyPtrField) != len(to.SliceAnyPtrField) {
 		return false
 	}
-	for i7 := range s.SliceAnyPtrField {
-		if (s.SliceAnyPtrField[i7] == nil) != (to.SliceAnyPtrField[i7] == nil) {
+	for idx7 := range s.SliceAnyPtrField {
+		if (s.SliceAnyPtrField[idx7] == nil) != (to.SliceAnyPtrField[idx7] == nil) {
 			return false
 		}
-		if s.SliceAnyPtrField[i7] != nil && to.SliceAnyPtrField[i7] != nil {
-			if (*s.SliceAnyPtrField[i7]) != (*to.SliceAnyPtrField[i7]) {
+		if s.SliceAnyPtrField[idx7] != nil && to.SliceAnyPtrField[idx7] != nil {
+			if (*s.SliceAnyPtrField[idx7]) != (*to.SliceAnyPtrField[idx7]) {
 				return false
 			}
 		}
