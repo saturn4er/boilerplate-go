@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-pnp/go-pnp/pkg/optionutil"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -105,9 +104,12 @@ type Outbox[Entity any] interface {
 	Send(ctx context.Context, model *Entity) error
 }
 
+type MessageProcessor func(ctx context.Context, msg *Message) error
+
 type GormStorage[ExtType any] struct {
-	DB           *gorm.DB
-	BuildMessage func(*ExtType) (*Message, error)
+	DB                *gorm.DB
+	BuildMessage      func(*ExtType) (*Message, error)
+	MessageProcessors []MessageProcessor
 }
 
 func (s GormStorage[ExtType]) Send(ctx context.Context, model *ExtType) error {
@@ -116,7 +118,11 @@ func (s GormStorage[ExtType]) Send(ctx context.Context, model *ExtType) error {
 		return err
 	}
 
-	addTraceMetadata(ctx, message)
+	for _, processor := range s.MessageProcessors {
+		if err := processor(ctx, message); err != nil {
+			return err
+		}
+	}
 
 	dbMessageToCreate, err := convertMessageToDB(message)
 	if err != nil {
@@ -240,20 +246,4 @@ func (s GormStorage[ExtType]) Delete(ctx context.Context, filter *MessageFilter)
 	}
 
 	return nil
-}
-
-const (
-	MetadataTraceIDKey = "trace_id"
-	MetadataSpanIDKey  = "span_id"
-)
-
-func addTraceMetadata(ctx context.Context, msg *Message) {
-	sc := trace.SpanContextFromContext(ctx)
-
-	if !sc.IsValid() {
-		return
-	}
-
-	msg.Metadata[MetadataTraceIDKey] = sc.TraceID().String()
-	msg.Metadata[MetadataSpanIDKey] = sc.SpanID().String()
 }
