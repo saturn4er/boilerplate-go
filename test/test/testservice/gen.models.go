@@ -4,6 +4,7 @@ import (
 	uuid "github.com/google/uuid"
 
 	filter "github.com/saturn4er/boilerplate-go/lib/filter"
+	order "github.com/saturn4er/boilerplate-go/lib/order"
 	// user code 'imports'
 	// end user code 'imports'
 )
@@ -155,6 +156,7 @@ type SomeModelFilter struct {
 	Or  []*SomeModelFilter
 	And []*SomeModelFilter
 }
+type SomeModelOrder order.Order[SomeModelField]
 
 type SomeModel struct {
 	ID                 uuid.UUID
@@ -662,6 +664,7 @@ type SomeOtherModelFilter struct {
 	Or  []*SomeOtherModelFilter
 	And []*SomeOtherModelFilter
 }
+type SomeOtherModelOrder order.Order[SomeOtherModelField]
 
 type SomeOtherModel struct {
 	ID uuid.UUID
@@ -700,6 +703,7 @@ type OneOfValue1Filter struct {
 	Or  []*OneOfValue1Filter
 	And []*OneOfValue1Filter
 }
+type OneOfValue1Order order.Order[OneOfValue1Field]
 
 type OneOfValue1 struct {
 	Value string
@@ -738,6 +742,7 @@ type OneOfValue2Filter struct {
 	Or  []*OneOfValue2Filter
 	And []*OneOfValue2Filter
 }
+type OneOfValue2Order order.Order[OneOfValue2Field]
 
 type OneOfValue2 struct {
 	Value string
@@ -778,6 +783,7 @@ type PasswordRecoveryEventFilter struct {
 	Or  []*PasswordRecoveryEventFilter
 	And []*PasswordRecoveryEventFilter
 }
+type PasswordRecoveryEventOrder order.Order[PasswordRecoveryEventField]
 
 type PasswordRecoveryEvent struct {
 	ID             uuid.UUID
@@ -830,6 +836,7 @@ type PasswordRecoveryRequestedEventDataFilter struct {
 	Or     []*PasswordRecoveryRequestedEventDataFilter
 	And    []*PasswordRecoveryRequestedEventDataFilter
 }
+type PasswordRecoveryRequestedEventDataOrder order.Order[PasswordRecoveryRequestedEventDataField]
 
 type PasswordRecoveryRequestedEventData struct {
 	Email            string
@@ -885,6 +892,7 @@ type PasswordRecoveryCompletedEventDataFilter struct {
 	Or     []*PasswordRecoveryCompletedEventDataFilter
 	And    []*PasswordRecoveryCompletedEventDataFilter
 }
+type PasswordRecoveryCompletedEventDataOrder order.Order[PasswordRecoveryCompletedEventDataField]
 
 type PasswordRecoveryCompletedEventData struct {
 	Email  string
