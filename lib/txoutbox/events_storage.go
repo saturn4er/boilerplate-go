@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-pnp/go-pnp/pkg/optionutil"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -114,6 +115,8 @@ func (s GormStorage[ExtType]) Send(ctx context.Context, model *ExtType) error {
 	if err != nil {
 		return err
 	}
+
+	addTraceMetadata(ctx, message)
 
 	dbMessageToCreate, err := convertMessageToDB(message)
 	if err != nil {
@@ -237,4 +240,20 @@ func (s GormStorage[ExtType]) Delete(ctx context.Context, filter *MessageFilter)
 	}
 
 	return nil
+}
+
+const (
+	MetadataTraceIDKey = "trace_id"
+	MetadataSpanIDKey  = "span_id"
+)
+
+func addTraceMetadata(ctx context.Context, msg *Message) {
+	sc := trace.SpanContextFromContext(ctx)
+
+	if !sc.IsValid() {
+		return
+	}
+
+	msg.Metadata[MetadataTraceIDKey] = sc.TraceID().String()
+	msg.Metadata[MetadataSpanIDKey] = sc.SpanID().String()
 }
