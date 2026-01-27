@@ -34,6 +34,14 @@ func buildSomeModelFilterExpr(filter *testservice.SomeModelFilter, options ...fu
 			Column: opts.columnPrefix + "id",
 			Filter: filter.ID,
 		},
+		dbutil.ColumnFilter[string]{
+			Column: opts.columnPrefix + "name",
+			Filter: filter.Name,
+		},
+		dbutil.ColumnFilter[*string]{
+			Column: opts.columnPrefix + "description",
+			Filter: filter.Description,
+		},
 		dbutil.ExpressionBuilderFunc(func() (clause.Expression, error) {
 			if filter.Or == nil {
 				return nil, nil

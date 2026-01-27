@@ -2,7 +2,9 @@ package teststorage
 
 import (
 	context "context"
+	strconv "strconv"
 
+	xxhash "github.com/cespare/xxhash"
 	logging "github.com/go-pnp/go-pnp/logging"
 	gorm "gorm.io/gorm"
 	clause "gorm.io/gorm/clause"
@@ -37,7 +39,23 @@ func (s Storages) IdempotencyKeys() idempotency.Storage {
 	return idempotency.GormStorage{
 		DB: s.db,
 	}
+
 }
+
+func (s *Storages) WithAdvisoryLock(ctx context.Context, scope string, lockID int64) error {
+	hasher := xxhash.New()
+	hasher.Write([]byte(scope))
+	hasher.Write([]byte{':'})
+	hasher.Write(strconv.AppendInt(nil, lockID, 10))
+
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 func (s Storages) ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx testsvc.Storage) error) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		return cb(ctx, &Storages{tx, s.logger})
@@ -60,6 +78,8 @@ func NewSomeModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeModel
 		},
 		FieldMapping: map[any]clause.Column{
 			testsvc.SomeModelFieldID:                 {Name: "id"},
+			testsvc.SomeModelFieldName:               {Name: "name"},
+			testsvc.SomeModelFieldDescription:        {Name: "description"},
 			testsvc.SomeModelFieldModelField:         {Name: "model_field"},
 			testsvc.SomeModelFieldModelPtrField:      {Name: "model_ptr_field"},
 			testsvc.SomeModelFieldOneOfField:         {Name: "one_of_field"},
@@ -85,6 +105,7 @@ func NewSomeModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeModel
 			testsvc.SomeModelFieldSliceAnyField:      {Name: "slice_any_field"},
 			testsvc.SomeModelFieldSliceAnyPtrField:   {Name: "slice_any_ptr_field"},
 		},
+		LockScope: "test.SomeModels",
 	}
 }
 
@@ -101,6 +122,7 @@ func NewSomeOtherModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.Some
 		FieldMapping: map[any]clause.Column{
 			testsvc.SomeOtherModelFieldID: {Name: "id"},
 		},
+		LockScope: "test.SomeOtherModels",
 	}
 }
 

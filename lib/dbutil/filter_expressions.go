@@ -33,6 +33,12 @@ func FilterExpression[T, V any](value filter.Filter[T], column string, mapper fu
 		return notInGormCondition(typedValue, column, mapper)
 	case *filter.OrFilter[T]:
 		return orFilterGormCondition(typedValue, column, mapper)
+	case *filter.ContainsFilter[T]:
+		return containsFilterGormCondition(typedValue, column)
+	case *filter.HasPrefixFilter[T]:
+		return hasPrefixFilterGormCondition(typedValue, column)
+	case *filter.HasSuffixFilter[T]:
+		return hasSuffixFilterGormCondition(typedValue, column)
 	}
 
 	return nil, errors.Errorf("unsupported Filter type: %T", value)
@@ -247,4 +253,16 @@ type ExpressionBuilderFunc func() (clause.Expression, error)
 
 func (e ExpressionBuilderFunc) buildExpression() (clause.Expression, error) {
 	return e()
+}
+
+func hasPrefixFilterGormCondition[T any](hasPrefixFilter *filter.HasPrefixFilter[T], column string) (clause.Expression, error) {
+	return clause.Like{Column: column, Value: hasPrefixFilter.Prefix + "%"}, nil
+}
+
+func hasSuffixFilterGormCondition[T any](hasSuffixFilter *filter.HasSuffixFilter[T], column string) (clause.Expression, error) {
+	return clause.Like{Column: column, Value: "%" + hasSuffixFilter.Suffix}, nil
+}
+
+func containsFilterGormCondition[T any](containsFilter *filter.ContainsFilter[T], column string) (clause.Expression, error) {
+	return clause.Like{Column: column, Value: "%" + containsFilter.Substring + "%"}, nil
 }

@@ -8,6 +8,8 @@ types:
       table_name: some_models
       fields:
         - { name: ID, type: uuid, filterable: true, primary_key: true }
+        - { name: Name, type: string, filterable: true }
+        - { name: Description, type: "*string", filterable: true }
         - { name: ModelField, type: "SomeOtherModel"}
         - { name: ModelPtrField, type: "*SomeOtherModel"}
         - { name: OneOfField, type: "SomeOneOf" }

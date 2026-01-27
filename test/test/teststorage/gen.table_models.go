@@ -14,6 +14,8 @@ import (
 
 type dbSomeModel struct {
 	ID                 uuid.UUID                             `gorm:"column:id;primaryKey"`
+	Name               string                                `gorm:"column:name;type:text;"`
+	Description        *string                               `gorm:"column:description;type:text;"`
 	ModelField         jsonSomeOtherModel                    `gorm:"column:model_field;"`
 	ModelPtrField      *jsonSomeOtherModel                   `gorm:"column:model_ptr_field;"`
 	OneOfField         *jsonSomeOneOf                        `gorm:"column:one_of_field;"`
@@ -43,523 +45,535 @@ type dbSomeModel struct {
 func convertSomeModelToDB(src *testservice.SomeModel) (*dbSomeModel, error) {
 	result := &dbSomeModel{}
 	result.ID = src.ID
-	tmp1, err := convertSomeOtherModelToJsonModel(toPtr(src.ModelField))
+	result.Name = src.Name
+	if src.Description == nil {
+		result.Description = nil
+	} else {
+		result.Description = toPtr(fromPtr(src.Description))
+	}
+	tmp4, err := convertSomeOtherModelToJsonModel(toPtr(src.ModelField))
 	if err != nil {
 		return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 	}
-	result.ModelField = *tmp1
+	result.ModelField = *tmp4
 	if src.ModelPtrField != nil {
-		tmp2, err := convertSomeOtherModelToJsonModel(src.ModelPtrField)
+		tmp5, err := convertSomeOtherModelToJsonModel(src.ModelPtrField)
 		if err != nil {
 			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
-		result.ModelPtrField = tmp2
+		result.ModelPtrField = tmp5
 	} else {
 		result.ModelPtrField = nil
 	}
-	tmp3, err := convertSomeOneOfToDB(src.OneOfField)
+	tmp6, err := convertSomeOneOfToDB(src.OneOfField)
 	if err != nil {
 		return nil, err
 	}
-	result.OneOfField = tmp3
+	result.OneOfField = tmp6
 	if src.OneOfPtrField != nil {
-		tmp4, err := convertSomeOneOfToDB(*src.OneOfPtrField)
+		tmp7, err := convertSomeOneOfToDB(*src.OneOfPtrField)
 		if err != nil {
 			return nil, err
 		}
-		result.OneOfPtrField = tmp4
+		result.OneOfPtrField = tmp7
 	} else {
 		result.OneOfPtrField = nil
 	}
-	tmp5, err := convertSomeEnumToDB(src.EnumField)
+	tmp8, err := convertSomeEnumToDB(src.EnumField)
 	if err != nil {
 		return nil, err
 	}
-	result.EnumField = tmp5
+	result.EnumField = tmp8
 	if src.EnumPtrField == nil {
 		result.EnumPtrField = nil
 	} else {
-		tmp7, err := convertSomeEnumToDB(fromPtr(src.EnumPtrField))
+		tmp10, err := convertSomeEnumToDB(fromPtr(src.EnumPtrField))
 		if err != nil {
 			return nil, err
 		}
-		result.EnumPtrField = toPtr(tmp7)
+		result.EnumPtrField = toPtr(tmp10)
 	}
 	if src.AnyField != nil {
-		tmp8, err := json.Marshal(src.AnyField)
+		tmp11, err := json.Marshal(src.AnyField)
 		if err != nil {
 			return nil, err
 		}
 
-		marshaledValue := string(tmp8)
+		marshaledValue := string(tmp11)
 		result.AnyField = toPtr(marshaledValue)
 	} else {
 		result.AnyField = nil
 	}
 	if src.AnyPtrField != nil && fromPtr(src.AnyPtrField) != nil {
-		tmp9, err := json.Marshal(*src.AnyPtrField)
+		tmp12, err := json.Marshal(*src.AnyPtrField)
 		if err != nil {
 			return nil, err
 		}
 
-		marshaledValue1 := string(tmp9)
+		marshaledValue1 := string(tmp12)
 		result.AnyPtrField = toPtr(marshaledValue1)
 	} else {
 		result.AnyPtrField = nil
 	}
-	tmp10 := make(mapValue[string, jsonSomeOtherModel], len(src.MapModelField))
+	tmp13 := make(mapValue[string, jsonSomeOtherModel], len(src.MapModelField))
 	for k, v := range src.MapModelField {
-		tmp11, err := convertSomeOtherModelToJsonModel(toPtr(v))
+		tmp14, err := convertSomeOtherModelToJsonModel(toPtr(v))
 		if err != nil {
 			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
-		tmp10[k] = *tmp11
+		tmp13[k] = *tmp14
 	}
-	result.MapModelField = tmp10
-	tmp12 := make(mapValue[string, *jsonSomeOtherModel], len(src.MapModelPtrField))
+	result.MapModelField = tmp13
+	tmp15 := make(mapValue[string, *jsonSomeOtherModel], len(src.MapModelPtrField))
 	for k1, v1 := range src.MapModelPtrField {
 		if v1 != nil {
-			tmp13, err := convertSomeOtherModelToJsonModel(v1)
+			tmp16, err := convertSomeOtherModelToJsonModel(v1)
 			if err != nil {
 				return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 			}
-			tmp12[k1] = tmp13
+			tmp15[k1] = tmp16
 		} else {
-			tmp12[k1] = nil
+			tmp15[k1] = nil
 		}
 	}
-	result.MapModelPtrField = tmp12
-	tmp14 := make(mapValue[string, *jsonSomeOneOf], len(src.MapOneOfField))
+	result.MapModelPtrField = tmp15
+	tmp17 := make(mapValue[string, *jsonSomeOneOf], len(src.MapOneOfField))
 	for k2, v2 := range src.MapOneOfField {
-		tmp15, err := convertSomeOneOfToDB(v2)
+		tmp18, err := convertSomeOneOfToDB(v2)
 		if err != nil {
 			return nil, err
 		}
-		tmp14[k2] = tmp15
+		tmp17[k2] = tmp18
 	}
-	result.MapOneOfField = tmp14
-	tmp16 := make(mapValue[string, *jsonSomeOneOf], len(src.MapOneOfPtrField))
+	result.MapOneOfField = tmp17
+	tmp19 := make(mapValue[string, *jsonSomeOneOf], len(src.MapOneOfPtrField))
 	for k3, v3 := range src.MapOneOfPtrField {
 		if v3 != nil {
-			tmp17, err := convertSomeOneOfToDB(*v3)
+			tmp20, err := convertSomeOneOfToDB(*v3)
 			if err != nil {
 				return nil, err
 			}
-			tmp16[k3] = tmp17
+			tmp19[k3] = tmp20
 		} else {
-			tmp16[k3] = nil
+			tmp19[k3] = nil
 		}
 	}
-	result.MapOneOfPtrField = tmp16
-	tmp18 := make(mapValue[string, string], len(src.MapEnumField))
+	result.MapOneOfPtrField = tmp19
+	tmp21 := make(mapValue[string, string], len(src.MapEnumField))
 	for k4, v4 := range src.MapEnumField {
-		tmp19, err := convertSomeEnumToDB(v4)
+		tmp22, err := convertSomeEnumToDB(v4)
 		if err != nil {
 			return nil, err
 		}
-		tmp18[k4] = tmp19
+		tmp21[k4] = tmp22
 	}
-	result.MapEnumField = tmp18
-	tmp20 := make(mapValue[string, *string], len(src.MapEnumPtrField))
+	result.MapEnumField = tmp21
+	tmp23 := make(mapValue[string, *string], len(src.MapEnumPtrField))
 	for k5, v5 := range src.MapEnumPtrField {
 		if v5 == nil {
-			tmp20[k5] = nil
+			tmp23[k5] = nil
 		} else {
-			tmp22, err := convertSomeEnumToDB(fromPtr(v5))
+			tmp25, err := convertSomeEnumToDB(fromPtr(v5))
 			if err != nil {
 				return nil, err
 			}
-			tmp20[k5] = toPtr(tmp22)
+			tmp23[k5] = toPtr(tmp25)
 		}
 	}
-	result.MapEnumPtrField = tmp20
-	tmp23 := make(mapValue[string, *string], len(src.MapAnyField))
+	result.MapEnumPtrField = tmp23
+	tmp26 := make(mapValue[string, *string], len(src.MapAnyField))
 	for k6, v6 := range src.MapAnyField {
 		if v6 != nil {
-			tmp24, err := json.Marshal(v6)
+			tmp27, err := json.Marshal(v6)
 			if err != nil {
 				return nil, err
 			}
 
-			marshaledValue2 := string(tmp24)
-			tmp23[k6] = toPtr(marshaledValue2)
+			marshaledValue2 := string(tmp27)
+			tmp26[k6] = toPtr(marshaledValue2)
 		} else {
-			tmp23[k6] = nil
+			tmp26[k6] = nil
 		}
 	}
-	result.MapAnyField = tmp23
-	tmp25 := make(mapValue[string, *string], len(src.MapAnyPtrField))
+	result.MapAnyField = tmp26
+	tmp28 := make(mapValue[string, *string], len(src.MapAnyPtrField))
 	for k7, v7 := range src.MapAnyPtrField {
 		if v7 != nil && fromPtr(v7) != nil {
-			tmp26, err := json.Marshal(*v7)
+			tmp29, err := json.Marshal(*v7)
 			if err != nil {
 				return nil, err
 			}
 
-			marshaledValue3 := string(tmp26)
-			tmp25[k7] = toPtr(marshaledValue3)
+			marshaledValue3 := string(tmp29)
+			tmp28[k7] = toPtr(marshaledValue3)
 		} else {
-			tmp25[k7] = nil
+			tmp28[k7] = nil
 		}
 	}
-	result.MapAnyPtrField = tmp25
-	tmp27 := make(sliceValue[jsonSomeOtherModel], 0, len(src.ModelSliceField))
+	result.MapAnyPtrField = tmp28
+	tmp30 := make(sliceValue[jsonSomeOtherModel], 0, len(src.ModelSliceField))
 	for _, el := range src.ModelSliceField {
-		tmp28, err := convertSomeOtherModelToJsonModel(toPtr(el))
+		tmp31, err := convertSomeOtherModelToJsonModel(toPtr(el))
 		if err != nil {
 			return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 		}
-		tmp27 = append(tmp27, *tmp28)
+		tmp30 = append(tmp30, *tmp31)
 	}
-	result.ModelSliceField = tmp27
-	tmp29 := make(sliceValue[*jsonSomeOtherModel], 0, len(src.ModelPtrSliceField))
+	result.ModelSliceField = tmp30
+	tmp32 := make(sliceValue[*jsonSomeOtherModel], 0, len(src.ModelPtrSliceField))
 	for _, el := range src.ModelPtrSliceField {
 		if el != nil {
-			tmp30, err := convertSomeOtherModelToJsonModel(el)
+			tmp33, err := convertSomeOtherModelToJsonModel(el)
 			if err != nil {
 				return nil, errors.Wrap(err, "convert SomeOtherModel to db")
 			}
-			tmp29 = append(tmp29, tmp30)
+			tmp32 = append(tmp32, tmp33)
 		} else {
-			tmp29 = append(tmp29, nil)
+			tmp32 = append(tmp32, nil)
 		}
 	}
-	result.ModelPtrSliceField = tmp29
-	tmp31 := make(sliceValue[*jsonSomeOneOf], 0, len(src.OneOfSliceField))
+	result.ModelPtrSliceField = tmp32
+	tmp34 := make(sliceValue[*jsonSomeOneOf], 0, len(src.OneOfSliceField))
 	for _, el := range src.OneOfSliceField {
-		tmp32, err := convertSomeOneOfToDB(el)
+		tmp35, err := convertSomeOneOfToDB(el)
 		if err != nil {
 			return nil, err
 		}
-		tmp31 = append(tmp31, tmp32)
+		tmp34 = append(tmp34, tmp35)
 	}
-	result.OneOfSliceField = tmp31
-	tmp33 := make(sliceValue[*jsonSomeOneOf], 0, len(src.OneOfPtrSliceField))
+	result.OneOfSliceField = tmp34
+	tmp36 := make(sliceValue[*jsonSomeOneOf], 0, len(src.OneOfPtrSliceField))
 	for _, el := range src.OneOfPtrSliceField {
 		if el != nil {
-			tmp34, err := convertSomeOneOfToDB(*el)
+			tmp37, err := convertSomeOneOfToDB(*el)
 			if err != nil {
 				return nil, err
 			}
-			tmp33 = append(tmp33, tmp34)
+			tmp36 = append(tmp36, tmp37)
 		} else {
-			tmp33 = append(tmp33, nil)
+			tmp36 = append(tmp36, nil)
 		}
 	}
-	result.OneOfPtrSliceField = tmp33
-	tmp35 := make(stringSliceValue, 0, len(src.SliceEnumField))
+	result.OneOfPtrSliceField = tmp36
+	tmp38 := make(stringSliceValue, 0, len(src.SliceEnumField))
 	for _, el := range src.SliceEnumField {
-		tmp36, err := convertSomeEnumToDB(el)
+		tmp39, err := convertSomeEnumToDB(el)
 		if err != nil {
 			return nil, err
 		}
-		tmp35 = append(tmp35, tmp36)
+		tmp38 = append(tmp38, tmp39)
 	}
-	result.SliceEnumField = tmp35
-	tmp37 := make(sliceValue[*string], 0, len(src.SliceEnumPtrField))
+	result.SliceEnumField = tmp38
+	tmp40 := make(sliceValue[*string], 0, len(src.SliceEnumPtrField))
 	for _, el := range src.SliceEnumPtrField {
 		if el == nil {
-			tmp37 = append(tmp37, nil)
+			tmp40 = append(tmp40, nil)
 		} else {
-			tmp39, err := convertSomeEnumToDB(fromPtr(el))
+			tmp42, err := convertSomeEnumToDB(fromPtr(el))
 			if err != nil {
 				return nil, err
 			}
-			tmp37 = append(tmp37, toPtr(tmp39))
+			tmp40 = append(tmp40, toPtr(tmp42))
 		}
 	}
-	result.SliceEnumPtrField = tmp37
-	tmp40 := make(sliceValue[*string], 0, len(src.SliceAnyField))
+	result.SliceEnumPtrField = tmp40
+	tmp43 := make(sliceValue[*string], 0, len(src.SliceAnyField))
 	for _, el := range src.SliceAnyField {
 		if el != nil {
-			tmp41, err := json.Marshal(el)
+			tmp44, err := json.Marshal(el)
 			if err != nil {
 				return nil, err
 			}
 
-			marshaledValue4 := string(tmp41)
-			tmp40 = append(tmp40, toPtr(marshaledValue4))
+			marshaledValue4 := string(tmp44)
+			tmp43 = append(tmp43, toPtr(marshaledValue4))
 		} else {
-			tmp40 = append(tmp40, nil)
+			tmp43 = append(tmp43, nil)
 		}
 	}
-	result.SliceAnyField = tmp40
-	tmp42 := make(sliceValue[*string], 0, len(src.SliceAnyPtrField))
+	result.SliceAnyField = tmp43
+	tmp45 := make(sliceValue[*string], 0, len(src.SliceAnyPtrField))
 	for _, el := range src.SliceAnyPtrField {
 		if el != nil && fromPtr(el) != nil {
-			tmp43, err := json.Marshal(*el)
+			tmp46, err := json.Marshal(*el)
 			if err != nil {
 				return nil, err
 			}
 
-			marshaledValue5 := string(tmp43)
-			tmp42 = append(tmp42, toPtr(marshaledValue5))
+			marshaledValue5 := string(tmp46)
+			tmp45 = append(tmp45, toPtr(marshaledValue5))
 		} else {
-			tmp42 = append(tmp42, nil)
+			tmp45 = append(tmp45, nil)
 		}
 	}
-	result.SliceAnyPtrField = tmp42
+	result.SliceAnyPtrField = tmp45
 	return result, nil
 }
 
 func convertSomeModelFromDB(src *dbSomeModel) (*testservice.SomeModel, error) {
 	result := &testservice.SomeModel{}
 	result.ID = src.ID
-	tmp45, err := convertSomeOtherModelFromJsonModel(toPtr(src.ModelField))
+	result.Name = src.Name
+	if src.Description == nil {
+		result.Description = nil
+	} else {
+		result.Description = toPtr(fromPtr(src.Description))
+	}
+	tmp51, err := convertSomeOtherModelFromJsonModel(toPtr(src.ModelField))
 	if err != nil {
 		return nil, err
 	}
 
-	result.ModelField = fromPtr(tmp45)
+	result.ModelField = fromPtr(tmp51)
 	if src.ModelPtrField != nil {
-		tmp46, err := convertSomeOtherModelFromJsonModel(src.ModelPtrField)
+		tmp52, err := convertSomeOtherModelFromJsonModel(src.ModelPtrField)
 		if err != nil {
 			return nil, err
 		}
-		result.ModelPtrField = tmp46
+		result.ModelPtrField = tmp52
 	} else {
 		result.ModelPtrField = nil
 	}
-	tmp47, err := convertSomeOneOfFromDB(src.OneOfField)
+	tmp53, err := convertSomeOneOfFromDB(src.OneOfField)
 	if err != nil {
 		return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 	}
-	result.OneOfField = tmp47
+	result.OneOfField = tmp53
 	if src.OneOfPtrField != nil {
-		tmp48, err := convertSomeOneOfFromDB(src.OneOfPtrField)
+		tmp54, err := convertSomeOneOfFromDB(src.OneOfPtrField)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 		}
-		result.OneOfPtrField = toPtr(tmp48)
+		result.OneOfPtrField = toPtr(tmp54)
 	} else {
 		result.OneOfPtrField = nil
 	}
-	tmp49, err := convertSomeEnumFromDB(src.EnumField)
+	tmp55, err := convertSomeEnumFromDB(src.EnumField)
 	if err != nil {
 		return nil, err
 	}
-	result.EnumField = tmp49
+	result.EnumField = tmp55
 	if src.EnumPtrField == nil {
 		result.EnumPtrField = nil
 	} else {
-		tmp51, err := convertSomeEnumFromDB(fromPtr(src.EnumPtrField))
+		tmp57, err := convertSomeEnumFromDB(fromPtr(src.EnumPtrField))
 		if err != nil {
 			return nil, err
 		}
-		result.EnumPtrField = toPtr(tmp51)
+		result.EnumPtrField = toPtr(tmp57)
 	}
 	if src.AnyField != nil {
-		var tmp52 any
-		if err := json.Unmarshal([]byte(*src.AnyField), &tmp52); err != nil {
+		var tmp58 any
+		if err := json.Unmarshal([]byte(*src.AnyField), &tmp58); err != nil {
 			return nil, err
 		}
-		result.AnyField = tmp52
+		result.AnyField = tmp58
 	} else {
 		result.AnyField = nil
 	}
 	if src.AnyPtrField == nil {
 		result.AnyPtrField = nil
 	} else {
-		var tmp54 any
-		if err := json.Unmarshal([]byte(fromPtr(src.AnyPtrField)), &tmp54); err != nil {
+		var tmp60 any
+		if err := json.Unmarshal([]byte(fromPtr(src.AnyPtrField)), &tmp60); err != nil {
 			return nil, err
 		}
-		result.AnyPtrField = toPtr(tmp54)
+		result.AnyPtrField = toPtr(tmp60)
 	}
-	tmp55 := make(map[string]testservice.SomeOtherModel, len(src.MapModelField))
+	tmp61 := make(map[string]testservice.SomeOtherModel, len(src.MapModelField))
 	for k8, v8 := range src.MapModelField {
-		tmp56, err := convertSomeOtherModelFromJsonModel(toPtr(v8))
+		tmp62, err := convertSomeOtherModelFromJsonModel(toPtr(v8))
 		if err != nil {
 			return nil, err
 		}
 
-		tmp55[k8] = fromPtr(tmp56)
+		tmp61[k8] = fromPtr(tmp62)
 	}
-	result.MapModelField = tmp55
-	tmp57 := make(map[string]*testservice.SomeOtherModel, len(src.MapModelPtrField))
+	result.MapModelField = tmp61
+	tmp63 := make(map[string]*testservice.SomeOtherModel, len(src.MapModelPtrField))
 	for k9, v9 := range src.MapModelPtrField {
 		if v9 != nil {
-			tmp58, err := convertSomeOtherModelFromJsonModel(v9)
+			tmp64, err := convertSomeOtherModelFromJsonModel(v9)
 			if err != nil {
 				return nil, err
 			}
-			tmp57[k9] = tmp58
+			tmp63[k9] = tmp64
 		} else {
-			tmp57[k9] = nil
+			tmp63[k9] = nil
 		}
 	}
-	result.MapModelPtrField = tmp57
-	tmp59 := make(map[string]testservice.SomeOneOf, len(src.MapOneOfField))
+	result.MapModelPtrField = tmp63
+	tmp65 := make(map[string]testservice.SomeOneOf, len(src.MapOneOfField))
 	for k10, v10 := range src.MapOneOfField {
-		tmp60, err := convertSomeOneOfFromDB(v10)
+		tmp66, err := convertSomeOneOfFromDB(v10)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 		}
-		tmp59[k10] = tmp60
+		tmp65[k10] = tmp66
 	}
-	result.MapOneOfField = tmp59
-	tmp61 := make(map[string]*testservice.SomeOneOf, len(src.MapOneOfPtrField))
+	result.MapOneOfField = tmp65
+	tmp67 := make(map[string]*testservice.SomeOneOf, len(src.MapOneOfPtrField))
 	for k11, v11 := range src.MapOneOfPtrField {
 		if v11 != nil {
-			tmp62, err := convertSomeOneOfFromDB(v11)
+			tmp68, err := convertSomeOneOfFromDB(v11)
 			if err != nil {
 				return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 			}
-			tmp61[k11] = toPtr(tmp62)
+			tmp67[k11] = toPtr(tmp68)
 		} else {
-			tmp61[k11] = nil
+			tmp67[k11] = nil
 		}
 	}
-	result.MapOneOfPtrField = tmp61
-	tmp63 := make(map[string]testservice.SomeEnum, len(src.MapEnumField))
+	result.MapOneOfPtrField = tmp67
+	tmp69 := make(map[string]testservice.SomeEnum, len(src.MapEnumField))
 	for k12, v12 := range src.MapEnumField {
-		tmp64, err := convertSomeEnumFromDB(v12)
+		tmp70, err := convertSomeEnumFromDB(v12)
 		if err != nil {
 			return nil, err
 		}
-		tmp63[k12] = tmp64
+		tmp69[k12] = tmp70
 	}
-	result.MapEnumField = tmp63
-	tmp65 := make(map[string]*testservice.SomeEnum, len(src.MapEnumPtrField))
+	result.MapEnumField = tmp69
+	tmp71 := make(map[string]*testservice.SomeEnum, len(src.MapEnumPtrField))
 	for k13, v13 := range src.MapEnumPtrField {
 		if v13 == nil {
-			tmp65[k13] = nil
+			tmp71[k13] = nil
 		} else {
-			tmp67, err := convertSomeEnumFromDB(fromPtr(v13))
+			tmp73, err := convertSomeEnumFromDB(fromPtr(v13))
 			if err != nil {
 				return nil, err
 			}
-			tmp65[k13] = toPtr(tmp67)
+			tmp71[k13] = toPtr(tmp73)
 		}
 	}
-	result.MapEnumPtrField = tmp65
-	tmp68 := make(map[string]any, len(src.MapAnyField))
+	result.MapEnumPtrField = tmp71
+	tmp74 := make(map[string]any, len(src.MapAnyField))
 	for k14, v14 := range src.MapAnyField {
 		if v14 != nil {
-			var tmp69 any
-			if err := json.Unmarshal([]byte(*v14), &tmp69); err != nil {
+			var tmp75 any
+			if err := json.Unmarshal([]byte(*v14), &tmp75); err != nil {
 				return nil, err
 			}
-			tmp68[k14] = tmp69
+			tmp74[k14] = tmp75
 		} else {
-			tmp68[k14] = nil
+			tmp74[k14] = nil
 		}
 	}
-	result.MapAnyField = tmp68
-	tmp70 := make(map[string]*any, len(src.MapAnyPtrField))
+	result.MapAnyField = tmp74
+	tmp76 := make(map[string]*any, len(src.MapAnyPtrField))
 	for k15, v15 := range src.MapAnyPtrField {
 		if v15 == nil {
-			tmp70[k15] = nil
+			tmp76[k15] = nil
 		} else {
-			var tmp72 any
-			if err := json.Unmarshal([]byte(fromPtr(v15)), &tmp72); err != nil {
+			var tmp78 any
+			if err := json.Unmarshal([]byte(fromPtr(v15)), &tmp78); err != nil {
 				return nil, err
 			}
-			tmp70[k15] = toPtr(tmp72)
+			tmp76[k15] = toPtr(tmp78)
 		}
 	}
-	result.MapAnyPtrField = tmp70
-	tmp73 := make([]testservice.SomeOtherModel, 0, len(src.ModelSliceField))
+	result.MapAnyPtrField = tmp76
+	tmp79 := make([]testservice.SomeOtherModel, 0, len(src.ModelSliceField))
 	for _, el := range src.ModelSliceField {
 
-		tmp74, err := convertSomeOtherModelFromJsonModel(toPtr(el))
+		tmp80, err := convertSomeOtherModelFromJsonModel(toPtr(el))
 		if err != nil {
 			return nil, err
 		}
 
-		tmp73 = append(tmp73, fromPtr(tmp74))
+		tmp79 = append(tmp79, fromPtr(tmp80))
 	}
-	result.ModelSliceField = tmp73
-	tmp75 := make([]*testservice.SomeOtherModel, 0, len(src.ModelPtrSliceField))
+	result.ModelSliceField = tmp79
+	tmp81 := make([]*testservice.SomeOtherModel, 0, len(src.ModelPtrSliceField))
 	for _, el := range src.ModelPtrSliceField {
 
 		if el != nil {
-			tmp76, err := convertSomeOtherModelFromJsonModel(el)
+			tmp82, err := convertSomeOtherModelFromJsonModel(el)
 			if err != nil {
 				return nil, err
 			}
-			tmp75 = append(tmp75, tmp76)
+			tmp81 = append(tmp81, tmp82)
 		} else {
-			tmp75 = append(tmp75, nil)
+			tmp81 = append(tmp81, nil)
 		}
 	}
-	result.ModelPtrSliceField = tmp75
-	tmp77 := make([]testservice.SomeOneOf, 0, len(src.OneOfSliceField))
+	result.ModelPtrSliceField = tmp81
+	tmp83 := make([]testservice.SomeOneOf, 0, len(src.OneOfSliceField))
 	for _, el := range src.OneOfSliceField {
 
-		tmp78, err := convertSomeOneOfFromDB(el)
+		tmp84, err := convertSomeOneOfFromDB(el)
 		if err != nil {
 			return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 		}
-		tmp77 = append(tmp77, tmp78)
+		tmp83 = append(tmp83, tmp84)
 	}
-	result.OneOfSliceField = tmp77
-	tmp79 := make([]*testservice.SomeOneOf, 0, len(src.OneOfPtrSliceField))
+	result.OneOfSliceField = tmp83
+	tmp85 := make([]*testservice.SomeOneOf, 0, len(src.OneOfPtrSliceField))
 	for _, el := range src.OneOfPtrSliceField {
 
 		if el != nil {
-			tmp80, err := convertSomeOneOfFromDB(el)
+			tmp86, err := convertSomeOneOfFromDB(el)
 			if err != nil {
 				return nil, fmt.Errorf("convert SomeOneOf to service type: %w", err)
 			}
-			tmp79 = append(tmp79, toPtr(tmp80))
+			tmp85 = append(tmp85, toPtr(tmp86))
 		} else {
-			tmp79 = append(tmp79, nil)
+			tmp85 = append(tmp85, nil)
 		}
 	}
-	result.OneOfPtrSliceField = tmp79
-	tmp81 := make([]testservice.SomeEnum, 0, len(src.SliceEnumField))
+	result.OneOfPtrSliceField = tmp85
+	tmp87 := make([]testservice.SomeEnum, 0, len(src.SliceEnumField))
 	for _, el := range src.SliceEnumField {
 
-		tmp82, err := convertSomeEnumFromDB(el)
+		tmp88, err := convertSomeEnumFromDB(el)
 		if err != nil {
 			return nil, err
 		}
-		tmp81 = append(tmp81, tmp82)
+		tmp87 = append(tmp87, tmp88)
 	}
-	result.SliceEnumField = tmp81
-	tmp83 := make([]*testservice.SomeEnum, 0, len(src.SliceEnumPtrField))
+	result.SliceEnumField = tmp87
+	tmp89 := make([]*testservice.SomeEnum, 0, len(src.SliceEnumPtrField))
 	for _, el := range src.SliceEnumPtrField {
 
 		if el == nil {
-			tmp83 = append(tmp83, nil)
+			tmp89 = append(tmp89, nil)
 		} else {
-			tmp85, err := convertSomeEnumFromDB(fromPtr(el))
+			tmp91, err := convertSomeEnumFromDB(fromPtr(el))
 			if err != nil {
 				return nil, err
 			}
-			tmp83 = append(tmp83, toPtr(tmp85))
+			tmp89 = append(tmp89, toPtr(tmp91))
 		}
 	}
-	result.SliceEnumPtrField = tmp83
-	tmp86 := make([]any, 0, len(src.SliceAnyField))
+	result.SliceEnumPtrField = tmp89
+	tmp92 := make([]any, 0, len(src.SliceAnyField))
 	for _, el := range src.SliceAnyField {
 
 		if el != nil {
-			var tmp87 any
-			if err := json.Unmarshal([]byte(*el), &tmp87); err != nil {
+			var tmp93 any
+			if err := json.Unmarshal([]byte(*el), &tmp93); err != nil {
 				return nil, err
 			}
-			tmp86 = append(tmp86, tmp87)
+			tmp92 = append(tmp92, tmp93)
 		} else {
-			tmp86 = append(tmp86, nil)
+			tmp92 = append(tmp92, nil)
 		}
 	}
-	result.SliceAnyField = tmp86
-	tmp88 := make([]*any, 0, len(src.SliceAnyPtrField))
+	result.SliceAnyField = tmp92
+	tmp94 := make([]*any, 0, len(src.SliceAnyPtrField))
 	for _, el := range src.SliceAnyPtrField {
 
 		if el == nil {
-			tmp88 = append(tmp88, nil)
+			tmp94 = append(tmp94, nil)
 		} else {
-			var tmp90 any
-			if err := json.Unmarshal([]byte(fromPtr(el)), &tmp90); err != nil {
+			var tmp96 any
+			if err := json.Unmarshal([]byte(fromPtr(el)), &tmp96); err != nil {
 				return nil, err
 			}
-			tmp88 = append(tmp88, toPtr(tmp90))
+			tmp94 = append(tmp94, toPtr(tmp96))
 		}
 	}
-	result.SliceAnyPtrField = tmp88
+	result.SliceAnyPtrField = tmp94
 	return result, nil
 }
 func (a dbSomeModel) TableName() string {

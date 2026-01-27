@@ -4,6 +4,7 @@ import (
 	uuid "github.com/google/uuid"
 
 	filter "github.com/saturn4er/boilerplate-go/lib/filter"
+	order "github.com/saturn4er/boilerplate-go/lib/order"
 	// user code 'imports'
 	// end user code 'imports'
 )
@@ -124,6 +125,8 @@ type SomeModelField byte
 
 const (
 	SomeModelFieldID SomeModelField = iota + 1
+	SomeModelFieldName
+	SomeModelFieldDescription
 	SomeModelFieldModelField
 	SomeModelFieldModelPtrField
 	SomeModelFieldOneOfField
@@ -151,13 +154,18 @@ const (
 )
 
 type SomeModelFilter struct {
-	ID  filter.Filter[uuid.UUID]
-	Or  []*SomeModelFilter
-	And []*SomeModelFilter
+	ID          filter.Filter[uuid.UUID]
+	Name        filter.Filter[string]
+	Description filter.Filter[*string]
+	Or          []*SomeModelFilter
+	And         []*SomeModelFilter
 }
+type SomeModelOrder order.Order[SomeModelField]
 
 type SomeModel struct {
 	ID                 uuid.UUID
+	Name               string
+	Description        *string
 	ModelField         SomeOtherModel
 	ModelPtrField      *SomeOtherModel
 	OneOfField         SomeOneOf
@@ -190,190 +198,196 @@ type SomeModel struct {
 func (s *SomeModel) Copy() SomeModel {
 	var result SomeModel
 	result.ID = s.ID
+	result.Name = s.Name
+	if s.Description != nil {
+		var tmp string
+		tmp = (*s.Description)
+		result.Description = &tmp
+	}
 	result.ModelField = s.ModelField.Copy() // model
 	if s.ModelPtrField != nil {
-		var tmp SomeOtherModel
-		tmp = (*s.ModelPtrField).Copy() // model
-		result.ModelPtrField = &tmp
+		var tmp1 SomeOtherModel
+		tmp1 = (*s.ModelPtrField).Copy() // model
+		result.ModelPtrField = &tmp1
 	}
 	result.OneOfField = copySomeOneOf(s.OneOfField)
 	if s.OneOfPtrField != nil {
-		var tmp1 SomeOneOf
-		tmp1 = copySomeOneOf((*s.OneOfPtrField))
-		result.OneOfPtrField = &tmp1
+		var tmp2 SomeOneOf
+		tmp2 = copySomeOneOf((*s.OneOfPtrField))
+		result.OneOfPtrField = &tmp2
 	}
 	result.EnumField = s.EnumField // enum
 	if s.EnumPtrField != nil {
-		var tmp2 SomeEnum
-		tmp2 = (*s.EnumPtrField) // enum
-		result.EnumPtrField = &tmp2
+		var tmp3 SomeEnum
+		tmp3 = (*s.EnumPtrField) // enum
+		result.EnumPtrField = &tmp3
 	}
 	result.AnyField = s.AnyField
 	if s.AnyPtrField != nil {
-		var tmp3 any
-		tmp3 = (*s.AnyPtrField)
-		result.AnyPtrField = &tmp3
+		var tmp4 any
+		tmp4 = (*s.AnyPtrField)
+		result.AnyPtrField = &tmp4
 	}
-	tmp4 := make(map[string]SomeOtherModel)
+	tmp5 := make(map[string]SomeOtherModel)
 	for k, v := range s.MapModelField {
 		var keyCopy string
 		var valueCopy SomeOtherModel
 		keyCopy = k
 		valueCopy = v.Copy() // model
-		tmp4[keyCopy] = valueCopy
+		tmp5[keyCopy] = valueCopy
 	}
-	result.MapModelField = tmp4
-	tmp5 := make(map[string]*SomeOtherModel)
+	result.MapModelField = tmp5
+	tmp6 := make(map[string]*SomeOtherModel)
 	for k, v := range s.MapModelPtrField {
 		var keyCopy1 string
 		var valueCopy1 *SomeOtherModel
 		keyCopy1 = k
 		if v != nil {
-			var tmp6 SomeOtherModel
-			tmp6 = (*v).Copy() // model
-			valueCopy1 = &tmp6
+			var tmp7 SomeOtherModel
+			tmp7 = (*v).Copy() // model
+			valueCopy1 = &tmp7
 		}
-		tmp5[keyCopy1] = valueCopy1
+		tmp6[keyCopy1] = valueCopy1
 	}
-	result.MapModelPtrField = tmp5
-	tmp7 := make(map[string]SomeOneOf)
+	result.MapModelPtrField = tmp6
+	tmp8 := make(map[string]SomeOneOf)
 	for k, v := range s.MapOneOfField {
 		var keyCopy2 string
 		var valueCopy2 SomeOneOf
 		keyCopy2 = k
 		valueCopy2 = copySomeOneOf(v)
-		tmp7[keyCopy2] = valueCopy2
+		tmp8[keyCopy2] = valueCopy2
 	}
-	result.MapOneOfField = tmp7
-	tmp8 := make(map[string]*SomeOneOf)
+	result.MapOneOfField = tmp8
+	tmp9 := make(map[string]*SomeOneOf)
 	for k, v := range s.MapOneOfPtrField {
 		var keyCopy3 string
 		var valueCopy3 *SomeOneOf
 		keyCopy3 = k
 		if v != nil {
-			var tmp9 SomeOneOf
-			tmp9 = copySomeOneOf((*v))
-			valueCopy3 = &tmp9
+			var tmp10 SomeOneOf
+			tmp10 = copySomeOneOf((*v))
+			valueCopy3 = &tmp10
 		}
-		tmp8[keyCopy3] = valueCopy3
+		tmp9[keyCopy3] = valueCopy3
 	}
-	result.MapOneOfPtrField = tmp8
-	tmp10 := make(map[string]SomeEnum)
+	result.MapOneOfPtrField = tmp9
+	tmp11 := make(map[string]SomeEnum)
 	for k, v := range s.MapEnumField {
 		var keyCopy4 string
 		var valueCopy4 SomeEnum
 		keyCopy4 = k
 		valueCopy4 = v // enum
-		tmp10[keyCopy4] = valueCopy4
+		tmp11[keyCopy4] = valueCopy4
 	}
-	result.MapEnumField = tmp10
-	tmp11 := make(map[string]*SomeEnum)
+	result.MapEnumField = tmp11
+	tmp12 := make(map[string]*SomeEnum)
 	for k, v := range s.MapEnumPtrField {
 		var keyCopy5 string
 		var valueCopy5 *SomeEnum
 		keyCopy5 = k
 		if v != nil {
-			var tmp12 SomeEnum
-			tmp12 = (*v) // enum
-			valueCopy5 = &tmp12
+			var tmp13 SomeEnum
+			tmp13 = (*v) // enum
+			valueCopy5 = &tmp13
 		}
-		tmp11[keyCopy5] = valueCopy5
+		tmp12[keyCopy5] = valueCopy5
 	}
-	result.MapEnumPtrField = tmp11
-	tmp13 := make(map[string]any)
+	result.MapEnumPtrField = tmp12
+	tmp14 := make(map[string]any)
 	for k, v := range s.MapAnyField {
 		var keyCopy6 string
 		var valueCopy6 any
 		keyCopy6 = k
 		valueCopy6 = v
-		tmp13[keyCopy6] = valueCopy6
+		tmp14[keyCopy6] = valueCopy6
 	}
-	result.MapAnyField = tmp13
-	tmp14 := make(map[string]*any)
+	result.MapAnyField = tmp14
+	tmp15 := make(map[string]*any)
 	for k, v := range s.MapAnyPtrField {
 		var keyCopy7 string
 		var valueCopy7 *any
 		keyCopy7 = k
 		if v != nil {
-			var tmp15 any
-			tmp15 = (*v)
-			valueCopy7 = &tmp15
+			var tmp16 any
+			tmp16 = (*v)
+			valueCopy7 = &tmp16
 		}
-		tmp14[keyCopy7] = valueCopy7
+		tmp15[keyCopy7] = valueCopy7
 	}
-	result.MapAnyPtrField = tmp14
-	tmp16 := make([]SomeOtherModel, 0, len(s.ModelSliceField))
+	result.MapAnyPtrField = tmp15
+	tmp17 := make([]SomeOtherModel, 0, len(s.ModelSliceField))
 	for _, i := range s.ModelSliceField {
 		var itemCopy SomeOtherModel
 		itemCopy = i.Copy() // model
-		tmp16 = append(tmp16, itemCopy)
+		tmp17 = append(tmp17, itemCopy)
 	}
-	result.ModelSliceField = tmp16
-	tmp17 := make([]*SomeOtherModel, 0, len(s.ModelPtrSliceField))
+	result.ModelSliceField = tmp17
+	tmp18 := make([]*SomeOtherModel, 0, len(s.ModelPtrSliceField))
 	for _, i1 := range s.ModelPtrSliceField {
 		var itemCopy1 *SomeOtherModel
 		if i1 != nil {
-			var tmp18 SomeOtherModel
-			tmp18 = (*i1).Copy() // model
-			itemCopy1 = &tmp18
+			var tmp19 SomeOtherModel
+			tmp19 = (*i1).Copy() // model
+			itemCopy1 = &tmp19
 		}
-		tmp17 = append(tmp17, itemCopy1)
+		tmp18 = append(tmp18, itemCopy1)
 	}
-	result.ModelPtrSliceField = tmp17
-	tmp19 := make([]SomeOneOf, 0, len(s.OneOfSliceField))
+	result.ModelPtrSliceField = tmp18
+	tmp20 := make([]SomeOneOf, 0, len(s.OneOfSliceField))
 	for _, i2 := range s.OneOfSliceField {
 		var itemCopy2 SomeOneOf
 		itemCopy2 = copySomeOneOf(i2)
-		tmp19 = append(tmp19, itemCopy2)
+		tmp20 = append(tmp20, itemCopy2)
 	}
-	result.OneOfSliceField = tmp19
-	tmp20 := make([]*SomeOneOf, 0, len(s.OneOfPtrSliceField))
+	result.OneOfSliceField = tmp20
+	tmp21 := make([]*SomeOneOf, 0, len(s.OneOfPtrSliceField))
 	for _, i3 := range s.OneOfPtrSliceField {
 		var itemCopy3 *SomeOneOf
 		if i3 != nil {
-			var tmp21 SomeOneOf
-			tmp21 = copySomeOneOf((*i3))
-			itemCopy3 = &tmp21
+			var tmp22 SomeOneOf
+			tmp22 = copySomeOneOf((*i3))
+			itemCopy3 = &tmp22
 		}
-		tmp20 = append(tmp20, itemCopy3)
+		tmp21 = append(tmp21, itemCopy3)
 	}
-	result.OneOfPtrSliceField = tmp20
-	tmp22 := make([]SomeEnum, 0, len(s.SliceEnumField))
+	result.OneOfPtrSliceField = tmp21
+	tmp23 := make([]SomeEnum, 0, len(s.SliceEnumField))
 	for _, i4 := range s.SliceEnumField {
 		var itemCopy4 SomeEnum
 		itemCopy4 = i4 // enum
-		tmp22 = append(tmp22, itemCopy4)
+		tmp23 = append(tmp23, itemCopy4)
 	}
-	result.SliceEnumField = tmp22
-	tmp23 := make([]*SomeEnum, 0, len(s.SliceEnumPtrField))
+	result.SliceEnumField = tmp23
+	tmp24 := make([]*SomeEnum, 0, len(s.SliceEnumPtrField))
 	for _, i5 := range s.SliceEnumPtrField {
 		var itemCopy5 *SomeEnum
 		if i5 != nil {
-			var tmp24 SomeEnum
-			tmp24 = (*i5) // enum
-			itemCopy5 = &tmp24
+			var tmp25 SomeEnum
+			tmp25 = (*i5) // enum
+			itemCopy5 = &tmp25
 		}
-		tmp23 = append(tmp23, itemCopy5)
+		tmp24 = append(tmp24, itemCopy5)
 	}
-	result.SliceEnumPtrField = tmp23
-	tmp25 := make([]any, 0, len(s.SliceAnyField))
+	result.SliceEnumPtrField = tmp24
+	tmp26 := make([]any, 0, len(s.SliceAnyField))
 	for _, i6 := range s.SliceAnyField {
 		var itemCopy6 any
 		itemCopy6 = i6
-		tmp25 = append(tmp25, itemCopy6)
+		tmp26 = append(tmp26, itemCopy6)
 	}
-	result.SliceAnyField = tmp25
-	tmp26 := make([]*any, 0, len(s.SliceAnyPtrField))
+	result.SliceAnyField = tmp26
+	tmp27 := make([]*any, 0, len(s.SliceAnyPtrField))
 	for _, i7 := range s.SliceAnyPtrField {
 		var itemCopy7 *any
 		if i7 != nil {
-			var tmp27 any
-			tmp27 = (*i7)
-			itemCopy7 = &tmp27
+			var tmp28 any
+			tmp28 = (*i7)
+			itemCopy7 = &tmp28
 		}
-		tmp26 = append(tmp26, itemCopy7)
+		tmp27 = append(tmp27, itemCopy7)
 	}
-	result.SliceAnyPtrField = tmp26
+	result.SliceAnyPtrField = tmp27
 
 	return result
 }
@@ -386,6 +400,17 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 	}
 	if s.ID != to.ID {
 		return false
+	}
+	if s.Name != to.Name {
+		return false
+	}
+	if (s.Description == nil) != (to.Description == nil) {
+		return false
+	}
+	if s.Description != nil && to.Description != nil {
+		if (*s.Description) != (*to.Description) {
+			return false
+		}
 	}
 	if !s.ModelField.Equals(&to.ModelField) {
 		return false
@@ -662,6 +687,7 @@ type SomeOtherModelFilter struct {
 	Or  []*SomeOtherModelFilter
 	And []*SomeOtherModelFilter
 }
+type SomeOtherModelOrder order.Order[SomeOtherModelField]
 
 type SomeOtherModel struct {
 	ID uuid.UUID
@@ -700,6 +726,7 @@ type OneOfValue1Filter struct {
 	Or  []*OneOfValue1Filter
 	And []*OneOfValue1Filter
 }
+type OneOfValue1Order order.Order[OneOfValue1Field]
 
 type OneOfValue1 struct {
 	Value string
@@ -738,6 +765,7 @@ type OneOfValue2Filter struct {
 	Or  []*OneOfValue2Filter
 	And []*OneOfValue2Filter
 }
+type OneOfValue2Order order.Order[OneOfValue2Field]
 
 type OneOfValue2 struct {
 	Value string
@@ -778,6 +806,7 @@ type PasswordRecoveryEventFilter struct {
 	Or  []*PasswordRecoveryEventFilter
 	And []*PasswordRecoveryEventFilter
 }
+type PasswordRecoveryEventOrder order.Order[PasswordRecoveryEventField]
 
 type PasswordRecoveryEvent struct {
 	ID             uuid.UUID
@@ -830,6 +859,7 @@ type PasswordRecoveryRequestedEventDataFilter struct {
 	Or     []*PasswordRecoveryRequestedEventDataFilter
 	And    []*PasswordRecoveryRequestedEventDataFilter
 }
+type PasswordRecoveryRequestedEventDataOrder order.Order[PasswordRecoveryRequestedEventDataField]
 
 type PasswordRecoveryRequestedEventData struct {
 	Email            string
@@ -885,6 +915,7 @@ type PasswordRecoveryCompletedEventDataFilter struct {
 	Or     []*PasswordRecoveryCompletedEventDataFilter
 	And    []*PasswordRecoveryCompletedEventDataFilter
 }
+type PasswordRecoveryCompletedEventDataOrder order.Order[PasswordRecoveryCompletedEventDataField]
 
 type PasswordRecoveryCompletedEventData struct {
 	Email  string
