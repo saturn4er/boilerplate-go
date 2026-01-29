@@ -18,8 +18,9 @@ import (
 )
 
 type Storages struct {
-	db     *gorm.DB
-	logger *logging.Logger
+	db         *gorm.DB
+	logger     *logging.Logger
+	processors []txoutbox.MessageProcessor
 }
 
 var _ testsvc.Storage = &Storages{}
@@ -32,7 +33,7 @@ func (s Storages) SomeOtherModels() testsvc.SomeOtherModelsStorage {
 }
 
 func (s Storages) PasswordRecoveryEvents() testsvc.PasswordRecoveryEventsOutbox {
-	return NewPasswordRecoveryEventsOutbox(s.db)
+	return NewPasswordRecoveryEventsOutbox(s.db, s.processors)
 }
 
 func (s Storages) IdempotencyKeys() idempotency.Storage {
@@ -58,12 +59,12 @@ func (s *Storages) WithAdvisoryLock(ctx context.Context, scope string, lockID in
 
 func (s Storages) ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx testsvc.Storage) error) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		return cb(ctx, &Storages{tx, s.logger})
+		return cb(ctx, &Storages{db: tx, logger: s.logger, processors: s.processors})
 	})
 }
 
-func NewStorages(db *gorm.DB, logger *logging.Logger) *Storages {
-	return &Storages{db: db, logger: logger}
+func NewStorages(db *gorm.DB, logger *logging.Logger, processors []txoutbox.MessageProcessor) *Storages {
+	return &Storages{db: db, logger: logger, processors: processors}
 }
 
 func NewSomeModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.SomeModelsStorage {
@@ -126,9 +127,10 @@ func NewSomeOtherModelsStorage(db *gorm.DB, logger *logging.Logger) testsvc.Some
 	}
 }
 
-func NewPasswordRecoveryEventsOutbox(db *gorm.DB) testsvc.PasswordRecoveryEventsOutbox {
+func NewPasswordRecoveryEventsOutbox(db *gorm.DB, processors []txoutbox.MessageProcessor) testsvc.PasswordRecoveryEventsOutbox {
 	return txoutbox.GormStorage[testsvc.PasswordRecoveryEvent]{
-		DB:           db,
-		BuildMessage: buildPasswordRecoveryEventMessage,
+		DB:                db,
+		BuildMessage:      buildPasswordRecoveryEventMessage,
+		MessageProcessors: processors,
 	}
 }

@@ -104,15 +104,24 @@ type Outbox[Entity any] interface {
 	Send(ctx context.Context, model *Entity) error
 }
 
+type MessageProcessor func(ctx context.Context, msg *Message) error
+
 type GormStorage[ExtType any] struct {
-	DB           *gorm.DB
-	BuildMessage func(*ExtType) (*Message, error)
+	DB                *gorm.DB
+	BuildMessage      func(*ExtType) (*Message, error)
+	MessageProcessors []MessageProcessor
 }
 
 func (s GormStorage[ExtType]) Send(ctx context.Context, model *ExtType) error {
 	message, err := s.BuildMessage(model)
 	if err != nil {
 		return err
+	}
+
+	for _, processor := range s.MessageProcessors {
+		if err := processor(ctx, message); err != nil {
+			return err
+		}
 	}
 
 	dbMessageToCreate, err := convertMessageToDB(message)

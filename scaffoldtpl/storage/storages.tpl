@@ -24,6 +24,7 @@
 type Storages struct {
 db *{{$gormPkg.Ref "DB"}}
 logger *{{$loggingPkg.Ref "Logger"}}
+processors []{{$txoutboxPkg.Ref "MessageProcessor"}}
 }
 
 var _ {{$servicePkg.Ref "Storage"}} = &Storages{}
@@ -35,7 +36,7 @@ var _ {{$servicePkg.Ref "Storage"}} = &Storages{}
     {{- end }}
     {{- if eq $model.StorageType "tx_outbox" }}
     func (s Storages) {{$model.PluralName}}() {{$servicePkg.Ref (print $model.PluralName "Outbox")}} {
-      return New{{$model.PluralName}}Outbox(s.db)
+      return New{{$model.PluralName}}Outbox(s.db, s.processors)
     }
     {{- else }}
     func (s Storages) {{$model.PluralName}}() {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
@@ -67,12 +68,12 @@ func (s *Storages) WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope str
 
 func (s Storages) ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx {{$servicePkg.Ref "Storage"}}) error) error {
 return s.db.Transaction(func(tx *gorm.DB) error {
-return cb(ctx, &Storages{tx, s.logger})
+return cb(ctx, &Storages{db: tx, logger: s.logger, processors: s.processors})
 })
 }
 
-func NewStorages(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) *Storages {
-return &Storages{db: db, logger: logger}
+func NewStorages(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}, processors []{{$txoutboxPkg.Ref "MessageProcessor"}}) *Storages {
+return &Storages{db: db, logger: logger, processors: processors}
 }
 
 {{- range $model := $module.Types.Models }}
@@ -80,10 +81,11 @@ return &Storages{db: db, logger: logger}
         {{continue}}
     {{- end }}
     {{- if eq $model.StorageType "tx_outbox" }}
-        func New{{$model.PluralName}}Outbox(db *{{$gormPkg.Ref "DB"}}) {{$servicePkg.Ref (print $model.PluralName "Outbox")}} {
+        func New{{$model.PluralName}}Outbox(db *{{$gormPkg.Ref "DB"}}, processors []{{$txoutboxPkg.Ref "MessageProcessor"}}) {{$servicePkg.Ref (print $model.PluralName "Outbox")}} {
           return {{$txoutboxPkg.Ref "GormStorage"}}[{{$servicePkg.Ref $model.Name}}]{
             DB: db,
             BuildMessage:     build{{$model.Name}}Message,
+            MessageProcessors: processors,
           }
         }
     {{- else }}
@@ -139,7 +141,3 @@ return &Storages{db: db, logger: logger}
         {{- end }}
     {{- end }}
 {{- end }}
-
-
-
-
