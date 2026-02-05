@@ -9,7 +9,7 @@ require (
 	github.com/expr-lang/expr v1.15.6
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-pnp/go-pnp v0.0.0-20231206151410-39a518625c9c
-	github.com/go-pnp/jobber v1.0.0
+	github.com/go-pnp/jobber v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
