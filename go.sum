@@ -47,8 +47,8 @@ github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-pnp/go-pnp v0.0.0-20231206151410-39a518625c9c h1:jSyQM0UbCNxTZn7jhSB+icTxmIfpvkerRZuxnzh7RPg=
 github.com/go-pnp/go-pnp v0.0.0-20231206151410-39a518625c9c/go.mod h1:PoZNOB/47HaQm4W2NWgrrHZDM7vt7BrIg71xQC2aNYc=
-github.com/go-pnp/jobber v1.0.0 h1:fcKweP45EtgG9kdci/NiUDr9FfSMVb22HdcdjNdJb9M=
-github.com/go-pnp/jobber v1.0.0/go.mod h1:pRYKlXWHjOPoTXG+Zs/UUylkrtkSI9u523NemK2I80s=
+github.com/go-pnp/jobber v1.3.0 h1:Holn/wGkyPKjYxyJsOCffMfMzvKO0Bt1voHAZoBbJVc=
+github.com/go-pnp/jobber v1.3.0/go.mod h1:pRYKlXWHjOPoTXG+Zs/UUylkrtkSI9u523NemK2I80s=
 github.com/go-sql-driver/mysql v1.4.1/go.mod h1:zAC/RDZ24gD3HViQzih4MyKcchzm+sOG5ZlKdlhCg5w=
 github.com/go-sql-driver/mysql v1.8.1 h1:LedoTUt/eveggdHS9qUFC1EFSa8bU2+1pZjSRpvNJ1Y=
 github.com/go-sql-driver/mysql v1.8.1/go.mod h1:wEBSXgmK//2ZFJyE+qWnIsVGmvmEKlqwuVSjsCm7DZg=

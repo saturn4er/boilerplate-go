@@ -42,6 +42,10 @@ func NewMessagesProcessor(
 	}
 }
 
+func (m *MessagesSender) Name() string {
+	return "send_tx_outbox_messages"
+}
+
 func (m *MessagesSender) Init(ctx context.Context) error {
 	return nil
 }
