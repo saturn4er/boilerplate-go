@@ -58,7 +58,7 @@ func (s *Storages) WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope str
 	hasher.Write([]byte{':'})
 	hasher.Write({{$strconvPkg.Ref "AppendInt"}}(nil, lockID, 10))
 
-	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", int64(hasher.Sum64()))
 	if result.Error != nil {
 		return result.Error
 	}
