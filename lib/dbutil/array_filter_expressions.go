@@ -43,8 +43,12 @@ func ArrayFilterExpression[T, V any](value filter.ArrayFilter[T], column string,
 		return arrayContainsFilterGormCondition(typedValue, column, mapper)
 	case *filter.ArrayContainsAnyFilter[T]:
 		return arrayContainsAnyFilterGormCondition(typedValue, column, mapper)
+	case *filter.ArrayDoesNotContainAnyFilter[T]:
+		return arrayDoesNotContainAnyFilterGormCondition(typedValue, column, mapper)
 	case *filter.ArrayIsEmptyFilter[T]:
 		return arrayIsEmptyFilterGormCondition(column)
+	case *filter.ArrayIsNotEmptyFilter[T]:
+		return arrayIsNotEmptyFilterGormCondition(column)
 	case *filter.ArrayOrFilter[T]:
 		return arrayOrFilterGormCondition(typedValue, column, mapper)
 	default:
@@ -88,8 +92,29 @@ func arrayContainsAnyFilterGormCondition[T, V any](containsFilter *filter.ArrayC
 	return clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(values)}}, nil
 }
 
+func arrayDoesNotContainAnyFilterGormCondition[T, V any](containsFilter *filter.ArrayDoesNotContainAnyFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) { //nolint:lll
+	if mapper == nil {
+		return clause.Not(clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(containsFilter.Values)}}), nil
+	}
+
+	values := make([]V, 0, len(containsFilter.Values))
+	for _, val := range containsFilter.Values {
+		mappedValue, err := mapper(val)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, mappedValue)
+	}
+
+	return clause.Not(clause.Expr{SQL: fmt.Sprintf("%s && ?", column), Vars: []interface{}{pq.Array(values)}}), nil
+}
+
 func arrayIsEmptyFilterGormCondition(column string) (clause.Expression, error) { //nolint:lll
 	return clause.Expr{SQL: fmt.Sprintf("cardinality(%s) = 0", column)}, nil
+}
+
+func arrayIsNotEmptyFilterGormCondition(column string) (clause.Expression, error) { //nolint:lll
+	return clause.Expr{SQL: fmt.Sprintf("cardinality(%s) > 0", column)}, nil
 }
 
 func arrayOrFilterGormCondition[T, V any](orFilter *filter.ArrayOrFilter[T], column string, mapper func(T) (V, error)) (clause.Expression, error) {
