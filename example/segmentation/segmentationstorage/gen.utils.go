@@ -1,4 +1,4 @@
-package teststorage
+package segmentationstorage
 
 import (
 	driver "database/sql/driver"

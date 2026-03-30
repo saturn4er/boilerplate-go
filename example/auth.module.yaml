@@ -1,0 +1,14 @@
+types:
+  enums:
+    - name: Role
+      values: [Admin, User]
+  models:
+    - name: User
+      table_name: users
+      fields:
+        - { name: ID, type: uuid, primary_key: true, filterable: true }
+        - { name: Email, type: string, filterable: true }
+        - { name: Name, type: string }
+        - { name: Role, type: Role }
+produces:
+  - segmentation.SetUserTagCommand

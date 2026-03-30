@@ -1,8 +1,9 @@
-package testservice
+package authservice
 
 import (
 	context "context"
 
+	segmentationsvc "github.com/saturn4er/boilerplate-go/example/segmentation/segmentationservice"
 	dbutil "github.com/saturn4er/boilerplate-go/lib/dbutil"
 	idempotency "github.com/saturn4er/boilerplate-go/lib/idempotency"
 	txoutbox "github.com/saturn4er/boilerplate-go/lib/txoutbox"
@@ -11,13 +12,12 @@ import (
 )
 
 type Storage interface {
-	SomeModels() SomeModelsStorage
-	SomeOtherModels() SomeOtherModelsStorage
-	PasswordRecoveryEvents() PasswordRecoveryEventsOutbox
+	Users() UsersStorage
+	SetUserTagCommands() SetUserTagCommandsOutbox
 	IdempotencyKeys() idempotency.Storage
 	ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx Storage) error) error
 	WithAdvisoryLock(ctx context.Context, scope string, lockID int64) error
 }
-type SomeModelsStorage dbutil.EntityStorage[SomeModel, SomeModelFilter]
-type SomeOtherModelsStorage dbutil.EntityStorage[SomeOtherModel, SomeOtherModelFilter]
-type PasswordRecoveryEventsOutbox txoutbox.Outbox[PasswordRecoveryEvent]
+type UsersStorage dbutil.EntityStorage[User, UserFilter]
+
+type SetUserTagCommandsOutbox txoutbox.Outbox[segmentationsvc.SetUserTagCommand]

@@ -57,13 +57,21 @@ func (c *Config) EachFieldTypeRecursive(considerCommon bool, fn func(typ *Type))
 }
 
 func (c *Config) Init() error {
+	// Pass 1: init all module types so cross-module references resolve
+	for moduleName, module := range c.Modules {
+		if err := module.Value.Init(c, moduleName); err != nil {
+			return fmt.Errorf("init module %s: %w", moduleName, err)
+		}
+	}
+
+	// Pass 2: resolve produces references for target module(s)
 	for moduleName, module := range c.Modules {
 		if c.Module != "" && moduleName != c.Module {
 			continue
 		}
 
-		if err := module.Value.Init(c, moduleName); err != nil {
-			return fmt.Errorf("init module %s: %w", moduleName, err)
+		if err := module.Value.resolveProduces(c, moduleName); err != nil {
+			return fmt.Errorf("resolve produces for module %s: %w", moduleName, err)
 		}
 	}
 

@@ -32,6 +32,8 @@ type Model struct {
 	DoNotPersists      bool                 `yaml:"do_not_persists"`
 	HasCustomDBMethods bool                 `yaml:"has_custom_db_methods"`
 	TableName          string               `yaml:"table_name"`
+	NoLocalOutbox      bool                 `yaml:"no_local_outbox"`
+	MessageBuilder     string               `yaml:"message_builder"`
 }
 
 func (c *Model) FirstPKField() ModelField {
@@ -119,4 +121,22 @@ func (c *ModelField) Init(config *Config, moduleName string) error {
 	}
 
 	return nil
+}
+
+// MessageBuilderPackage returns the package path portion of MessageBuilder (everything before last dot).
+func (c Model) MessageBuilderPackage() string {
+	idx := strings.LastIndex(c.MessageBuilder, ".")
+	if idx < 0 {
+		return ""
+	}
+	return c.MessageBuilder[:idx]
+}
+
+// MessageBuilderFunc returns the function name portion of MessageBuilder (after last dot).
+func (c Model) MessageBuilderFunc() string {
+	idx := strings.LastIndex(c.MessageBuilder, ".")
+	if idx < 0 {
+		return c.MessageBuilder
+	}
+	return c.MessageBuilder[idx+1:]
 }

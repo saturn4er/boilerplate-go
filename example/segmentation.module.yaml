@@ -1,0 +1,23 @@
+types:
+  models:
+    - name: UserTag
+      table_name: user_tags
+      fields:
+        - { name: ID, type: uuid, primary_key: true, filterable: true }
+        - { name: UserID, type: uuid, filterable: true }
+        - { name: Key, type: string, filterable: true }
+        - { name: Value, type: string }
+    - name: SetUserTagCommand
+      storage_type: tx_outbox
+      no_local_outbox: true
+      message_builder: "github.com/saturn4er/boilerplate-go/example/segmentation/segmentationevent.BuildSetUserTagCommandMessage"
+      fields:
+        - { name: ID, type: uuid, primary_key: true }
+        - { name: Data, type: SetUserTagCommandData }
+        - { name: IdempotencyKey, type: string }
+    - name: SetUserTagCommandData
+      do_not_persists: true
+      fields:
+        - { name: UserID, type: uuid }
+        - { name: Key, type: string }
+        - { name: Value, type: string }

@@ -10,7 +10,7 @@ import (
 	"github.com/saturn4er/boilerplate-go/lib/txoutbox"
 )
 
-const OrderingKetMetadataKey = "ordering_key"
+const OrderingKeyMetadataKey = "ordering_key"
 const IdempotencyKeyMetadataKey = "idempotency_key"
 
 type MessagesSender struct {
@@ -44,7 +44,9 @@ func (m MessagesSender) SendMessage(ctx context.Context, message *txoutbox.Messa
 		watermillMessage.Metadata[k] = v
 	}
 	watermillMessage.Metadata[IdempotencyKeyMetadataKey] = message.IdempotencyKey
-	watermillMessage.Metadata[OrderingKetMetadataKey] = message.OrderingKey
+	watermillMessage.Metadata[OrderingKeyMetadataKey] = message.OrderingKey
+
+	watermillMessage.SetContext(ctx)
 
 	watermillMessage.SetContext(ctx)
 
