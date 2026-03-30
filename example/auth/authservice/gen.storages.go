@@ -17,7 +17,16 @@ type Storage interface {
 	IdempotencyKeys() idempotency.Storage
 	ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx Storage) error) error
 	WithAdvisoryLock(ctx context.Context, scope string, lockID int64) error
+	// user code 'Storage custom methods'
+	// end user code 'Storage custom methods'
 }
-type UsersStorage dbutil.EntityStorage[User, UserFilter]
+type UsersStorage interface {
+	dbutil.EntityStorage[User, UserFilter]
+	// user code 'User metods'
+	// end user code 'User metods'
+}
+
+// user code 'User definitions'
+// end user code 'User definitions'
 
 type SetUserTagCommandsOutbox txoutbox.Outbox[segmentationsvc.SetUserTagCommand]

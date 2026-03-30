@@ -42,7 +42,7 @@ func (s *Storages) WithAdvisoryLock(ctx context.Context, scope string, lockID in
 	hasher.Write([]byte{':'})
 	hasher.Write(strconv.AppendInt(nil, lockID, 10))
 
-	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", int64(hasher.Sum64()))
 	if result.Error != nil {
 		return result.Error
 	}
@@ -60,22 +60,32 @@ func NewStorages(db *gorm.DB, logger *logging.Logger, processors []txoutbox.Mess
 	return &Storages{db: db, logger: logger, processors: processors}
 }
 
+type UserTagsStorage struct {
+	dbutil.GormEntityStorage[segmentationsvc.UserTag, dbUserTag, segmentationsvc.UserTagFilter]
+}
+
+// user code 'UserTag custom methods'
+// end user code 'UserTag custom methods'
 func NewUserTagsStorage(db *gorm.DB, logger *logging.Logger) segmentationsvc.UserTagsStorage {
-	return dbutil.GormEntityStorage[segmentationsvc.UserTag, dbUserTag, segmentationsvc.UserTagFilter]{
-		Logger:            logger,
-		DB:                db,
-		DBErrorsWrapper:   wrapUserTagQueryError,
-		ConvertToInternal: convertUserTagToDB,
-		ConvertToExternal: convertUserTagFromDB,
-		BuildFilterExpression: func(filter *segmentationsvc.UserTagFilter) (clause.Expression, error) {
-			return buildUserTagFilterExpr(filter)
+	return &UserTagsStorage{
+		GormEntityStorage: dbutil.GormEntityStorage[segmentationsvc.UserTag, dbUserTag, segmentationsvc.UserTagFilter]{
+			Logger:            logger,
+			DB:                db,
+			DBErrorsWrapper:   wrapUserTagQueryError,
+			ConvertToInternal: convertUserTagToDB,
+			ConvertToExternal: convertUserTagFromDB,
+			BuildFilterExpression: func(filter *segmentationsvc.UserTagFilter) (clause.Expression, error) {
+				return buildUserTagFilterExpr(filter)
+			},
+			FieldMapping: map[any]clause.Column{
+				segmentationsvc.UserTagFieldID:     {Name: "id"},
+				segmentationsvc.UserTagFieldUserID: {Name: "user_id"},
+				segmentationsvc.UserTagFieldKey:    {Name: "key"},
+				segmentationsvc.UserTagFieldValue:  {Name: "value"},
+			},
+			LockScope: "segmentation.UserTags",
 		},
-		FieldMapping: map[any]clause.Column{
-			segmentationsvc.UserTagFieldID:     {Name: "id"},
-			segmentationsvc.UserTagFieldUserID: {Name: "user_id"},
-			segmentationsvc.UserTagFieldKey:    {Name: "key"},
-			segmentationsvc.UserTagFieldValue:  {Name: "value"},
-		},
-		LockScope: "segmentation.UserTags",
+		// user code 'UserTag custom metods'
+		// end user code 'UserTag custom metods'
 	}
 }

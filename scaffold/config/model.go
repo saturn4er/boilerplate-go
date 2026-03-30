@@ -21,19 +21,18 @@ type ModelTypeParameter struct {
 	Constraint string `yaml:"constraint"`
 }
 type Model struct {
-	ID                 uint                 `yaml:"id"`
-	Admin              ConfigModelAdmin     `yaml:"admin"`
-	Package            string               `yaml:"package"`
-	StorageType        ModelStorageType     `yaml:"storage_type"`
-	TypeParameters     []ModelTypeParameter `yaml:"type_parameters"`
-	Name               string               `yaml:"name"`
-	Fields             []ModelField         `yaml:"fields"`
-	PluralName         string               `yaml:"plural_name"`
-	DoNotPersists      bool                 `yaml:"do_not_persists"`
-	HasCustomDBMethods bool                 `yaml:"has_custom_db_methods"`
-	TableName          string               `yaml:"table_name"`
-	NoLocalOutbox      bool                 `yaml:"no_local_outbox"`
-	MessageBuilder     string               `yaml:"message_builder"`
+	ID             uint                 `yaml:"id"`
+	Admin          ConfigModelAdmin     `yaml:"admin"`
+	Package        string               `yaml:"package"`
+	StorageType    ModelStorageType     `yaml:"storage_type"`
+	TypeParameters []ModelTypeParameter `yaml:"type_parameters"`
+	Name           string               `yaml:"name"`
+	Fields         []ModelField         `yaml:"fields"`
+	PluralName     string               `yaml:"plural_name"`
+	DoNotPersists  bool                 `yaml:"do_not_persists"`
+	TableName      string               `yaml:"table_name"`
+	NoLocalOutbox  bool                 `yaml:"no_local_outbox"`
+	MessageBuilder string               `yaml:"message_builder"`
 }
 
 func (c *Model) FirstPKField() ModelField {

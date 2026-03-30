@@ -2,7 +2,7 @@
 "file_path": "{{.Module}}/{{.Module}}storage/gen.admin_table_generators.go",
 "package_name": "{{.Module}}storage",
 "package_path": "{{.Config.RootPackageName}}/{{.Module}}/{{.Module}}storage",
-"condition": "len(Config.Modules[Module].Value.Types.Models) > 0"
+"condition": "!Config.DisableAdmin && len(Config.Modules[Module].Value.Types.Models) > 0"
 }
 <><><>
 {{ $module := (index $.Config.Modules $.Module).Value}}
@@ -108,16 +108,6 @@ return map[string]{{$tablePkg.Ref "Generator"}}{
             {{- end}}
         {{- end }}
       {{- end }}
-
-
-{{/*      // set id editable is false.*/}}
-{{/*      formList.AddField("Id", "id", db.UUID, form.Default).FieldDefault(uuid.New().String()).FieldDisplayButCanNotEditWhenUpdate()*/}}
-{{/*      formList.AddField("Email", "email", db.Varchar, form.Email).FieldDisplayButCanNotEditWhenUpdate()*/}}
-{{/*      formList.AddField("First name", "first_name", db.Varchar, form.Text)*/}}
-{{/*      formList.AddField("Last name", "last_name", db.Varchar, form.Text)*/}}
-{{/*      formList.AddField("Created at", "created_at", db.Timestamp, form.Datetime)*/}}
-{{/*      formList.AddField("Updated at", "updated_at", db.Timestamp, form.Datetime)*/}}
-
 
       return table
       },

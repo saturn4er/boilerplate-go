@@ -30,6 +30,7 @@ type Storage interface {
 IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}}
 ExecuteInTransaction(ctx {{$contextPkg.Ref "Context"}}, cb func(ctx {{$contextPkg.Ref "Context"}}, tx Storage) error) error
 WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID int64) error
+{{ userCodeBlock (printf "Storage custom methods") }}
 }
 
 {{- range $model := $module.Types.Models }}
@@ -39,15 +40,11 @@ WithAdvisoryLock(ctx {{$contextPkg.Ref "Context"}}, scope string, lockID int64) 
           type {{$model.PluralName}}Outbox {{$txoutboxPkg.Ref "Outbox"}}[{{$model.Name}}]
             {{- end }}
         {{- else }}
-            {{- if $model.HasCustomDBMethods }}
               type {{$model.PluralName}}Storage interface {
                 {{$dbutil.Ref "EntityStorage"}}[{{$model.Name}}, {{$model.Name}}Filter]
                 {{ userCodeBlock (printf "%s metods" $model.Name) }}
               }
               {{ userCodeBlock (printf "%s definitions" $model.Name) }}
-            {{- else }}
-              type {{$model.PluralName}}Storage {{$dbutil.Ref "EntityStorage"}}[{{$model.Name}}, {{$model.Name}}Filter]
-            {{- end }}
         {{- end }}
     {{- end }}
 {{- end }}

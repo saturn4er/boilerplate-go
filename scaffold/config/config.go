@@ -10,6 +10,7 @@ import (
 type Config struct {
 	RootPackageName string                         `yaml:"root_package_name"`
 	GoImportsLocal  string                         `yaml:"goimports_local"`
+	DisableAdmin    bool                           `yaml:"disable_admin"`
 	Types           Types                          `yaml:"types"`
 	Modules         map[string]Importable[*Module] `yaml:"modules"`
 	Module          string                         `yaml:"-"`

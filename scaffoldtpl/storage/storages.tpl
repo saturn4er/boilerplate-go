@@ -109,35 +109,13 @@ return &Storages{db: db, logger: logger, processors: processors}
         {{ $dbType := $modelGoType.InLocalPackage.WithName (print "db" $modelGoType.Type) }}
         {{ $dbTypeRef := $dbType.Ref }}
 
-        {{- if $model.HasCustomDBMethods }}
-          type {{$model.PluralName}}Storage struct {
-          {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]
-          }
-          {{ userCodeBlock (printf "%s custom methods" $model.Name) }}
-          func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
-            return &{{$model.PluralName}}Storage{
-              GormEntityStorage: {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
-                Logger: logger,
-                DB: db,
-                DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
-                ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
-                ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
-                BuildFilterExpression: func(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}) ({{ $clausePkg.Ref "Expression"}}, error) {
-                  return {{template "storage.func.build_db_filter" $model.Name}}(filter)
-                },
-                FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
-                  {{- range $field := $model.Fields }}
-                      {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
-                  {{- end }}
-                },
-                LockScope:  "{{$.Module}}.{{$model.PluralName}}",
-              },
-              {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
-            }
-          }
-        {{- else }}
-          func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
-            return {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
+        type {{$model.PluralName}}Storage struct {
+        {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]
+        }
+        {{ userCodeBlock (printf "%s custom methods" $model.Name) }}
+        func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
+          return &{{$model.PluralName}}Storage{
+            GormEntityStorage: {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
               Logger: logger,
               DB: db,
               DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
@@ -152,9 +130,10 @@ return &Storages{db: db, logger: logger, processors: processors}
                 {{- end }}
               },
               LockScope:  "{{$.Module}}.{{$model.PluralName}}",
-            }
+            },
+            {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
           }
-        {{- end }}
+        }
     {{- end }}
 {{- end }}
 

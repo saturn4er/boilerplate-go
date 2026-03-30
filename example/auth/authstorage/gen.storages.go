@@ -48,7 +48,7 @@ func (s *Storages) WithAdvisoryLock(ctx context.Context, scope string, lockID in
 	hasher.Write([]byte{':'})
 	hasher.Write(strconv.AppendInt(nil, lockID, 10))
 
-	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", hasher.Sum64())
+	result := s.db.WithContext(ctx).Exec("SELECT pg_advisory_xact_lock(?)", int64(hasher.Sum64()))
 	if result.Error != nil {
 		return result.Error
 	}
@@ -66,23 +66,33 @@ func NewStorages(db *gorm.DB, logger *logging.Logger, processors []txoutbox.Mess
 	return &Storages{db: db, logger: logger, processors: processors}
 }
 
+type UsersStorage struct {
+	dbutil.GormEntityStorage[authsvc.User, dbUser, authsvc.UserFilter]
+}
+
+// user code 'User custom methods'
+// end user code 'User custom methods'
 func NewUsersStorage(db *gorm.DB, logger *logging.Logger) authsvc.UsersStorage {
-	return dbutil.GormEntityStorage[authsvc.User, dbUser, authsvc.UserFilter]{
-		Logger:            logger,
-		DB:                db,
-		DBErrorsWrapper:   wrapUserQueryError,
-		ConvertToInternal: convertUserToDB,
-		ConvertToExternal: convertUserFromDB,
-		BuildFilterExpression: func(filter *authsvc.UserFilter) (clause.Expression, error) {
-			return buildUserFilterExpr(filter)
+	return &UsersStorage{
+		GormEntityStorage: dbutil.GormEntityStorage[authsvc.User, dbUser, authsvc.UserFilter]{
+			Logger:            logger,
+			DB:                db,
+			DBErrorsWrapper:   wrapUserQueryError,
+			ConvertToInternal: convertUserToDB,
+			ConvertToExternal: convertUserFromDB,
+			BuildFilterExpression: func(filter *authsvc.UserFilter) (clause.Expression, error) {
+				return buildUserFilterExpr(filter)
+			},
+			FieldMapping: map[any]clause.Column{
+				authsvc.UserFieldID:    {Name: "id"},
+				authsvc.UserFieldEmail: {Name: "email"},
+				authsvc.UserFieldName:  {Name: "name"},
+				authsvc.UserFieldRole:  {Name: "role"},
+			},
+			LockScope: "auth.Users",
 		},
-		FieldMapping: map[any]clause.Column{
-			authsvc.UserFieldID:    {Name: "id"},
-			authsvc.UserFieldEmail: {Name: "email"},
-			authsvc.UserFieldName:  {Name: "name"},
-			authsvc.UserFieldRole:  {Name: "role"},
-		},
-		LockScope: "auth.Users",
+		// user code 'User custom metods'
+		// end user code 'User custom metods'
 	}
 }
 
