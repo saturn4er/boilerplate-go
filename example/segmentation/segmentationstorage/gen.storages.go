@@ -85,7 +85,5 @@ func NewUserTagsStorage(db *gorm.DB, logger *logging.Logger) segmentationsvc.Use
 			},
 			LockScope: "segmentation.UserTags",
 		},
-		// user code 'UserTag custom metods'
-		// end user code 'UserTag custom metods'
 	}
 }

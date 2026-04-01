@@ -48,7 +48,5 @@ func (m MessagesSender) SendMessage(ctx context.Context, message *txoutbox.Messa
 
 	watermillMessage.SetContext(ctx)
 
-	watermillMessage.SetContext(ctx)
-
 	return publisher.Publish(message.Topic, watermillMessage)
 }

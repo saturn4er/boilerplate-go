@@ -95,8 +95,8 @@ return &Storages{db: db, logger: logger, processors: processors}
           return {{$txoutboxPkg.Ref "GormStorage"}}[{{$servicePkg.Ref $model.Name}}]{
             DB: db,
             {{- if $model.MessageBuilder }}
-            {{ $msgBuilderPkg := import $model.MessageBuilderPackage }}
-            BuildMessage:     {{$msgBuilderPkg.Ref $model.MessageBuilderFunc}},
+            {{ $msgBuilderPkg := import $model.MessageBuilder.Package }}
+            BuildMessage:     {{$msgBuilderPkg.Ref $model.MessageBuilder.Func}},
             {{- else }}
             BuildMessage:     build{{$model.Name}}Message,
             {{- end }}
@@ -131,7 +131,6 @@ return &Storages{db: db, logger: logger, processors: processors}
               },
               LockScope:  "{{$.Module}}.{{$model.PluralName}}",
             },
-            {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
           }
         }
     {{- end }}
@@ -143,8 +142,8 @@ return &Storages{db: db, logger: logger, processors: processors}
       return {{$txoutboxPkg.Ref "GormStorage"}}[{{$srcSvcPkg.Ref $pe.Event.Name}}]{
         DB: db,
         {{- if $pe.Event.MessageBuilder }}
-        {{ $msgBuilderPkg := import $pe.Event.MessageBuilderPackage }}
-        BuildMessage:     {{$msgBuilderPkg.Ref $pe.Event.MessageBuilderFunc}},
+        {{ $msgBuilderPkg := import $pe.Event.MessageBuilder.Package }}
+        BuildMessage:     {{$msgBuilderPkg.Ref $pe.Event.MessageBuilder.Func}},
         {{- else }}
         BuildMessage:     build{{$pe.Event.Name}}Message,
         {{- end }}

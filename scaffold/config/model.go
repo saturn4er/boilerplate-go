@@ -20,19 +20,25 @@ type ModelTypeParameter struct {
 	Name       string `yaml:"name"`
 	Constraint string `yaml:"constraint"`
 }
+type QualifiedFunc struct {
+	Package string
+	Func    string
+}
+
 type Model struct {
-	ID             uint                 `yaml:"id"`
-	Admin          ConfigModelAdmin     `yaml:"admin"`
-	Package        string               `yaml:"package"`
-	StorageType    ModelStorageType     `yaml:"storage_type"`
-	TypeParameters []ModelTypeParameter `yaml:"type_parameters"`
-	Name           string               `yaml:"name"`
-	Fields         []ModelField         `yaml:"fields"`
-	PluralName     string               `yaml:"plural_name"`
-	DoNotPersists  bool                 `yaml:"do_not_persists"`
-	TableName      string               `yaml:"table_name"`
-	NoLocalOutbox  bool                 `yaml:"no_local_outbox"`
-	MessageBuilder string               `yaml:"message_builder"`
+	ID                uint                 `yaml:"id"`
+	Admin             ConfigModelAdmin     `yaml:"admin"`
+	Package           string               `yaml:"package"`
+	StorageType       ModelStorageType     `yaml:"storage_type"`
+	TypeParameters    []ModelTypeParameter `yaml:"type_parameters"`
+	Name              string               `yaml:"name"`
+	Fields            []ModelField         `yaml:"fields"`
+	PluralName        string               `yaml:"plural_name"`
+	DoNotPersists     bool                 `yaml:"do_not_persists"`
+	TableName         string               `yaml:"table_name"`
+	NoLocalOutbox     bool                 `yaml:"no_local_outbox"`
+	MessageBuilder    *QualifiedFunc       `yaml:"-"`
+	RawMessageBuilder string               `yaml:"message_builder"`
 }
 
 func (c *Model) FirstPKField() ModelField {
@@ -64,6 +70,18 @@ func (c *Model) Init(config *Config, moduleName string) error {
 
 	if c.PluralName == "" {
 		c.PluralName = c.Name + "s"
+	}
+
+	if c.RawMessageBuilder != "" {
+		idx := strings.LastIndex(c.RawMessageBuilder, ".")
+		if idx < 0 {
+			return fmt.Errorf("model %s: message_builder %q must be a fully qualified function (package.FuncName)", c.Name, c.RawMessageBuilder)
+		}
+
+		c.MessageBuilder = &QualifiedFunc{
+			Package: c.RawMessageBuilder[:idx],
+			Func:    c.RawMessageBuilder[idx+1:],
+		}
 	}
 
 	return nil
@@ -120,22 +138,4 @@ func (c *ModelField) Init(config *Config, moduleName string) error {
 	}
 
 	return nil
-}
-
-// MessageBuilderPackage returns the package path portion of MessageBuilder (everything before last dot).
-func (c Model) MessageBuilderPackage() string {
-	idx := strings.LastIndex(c.MessageBuilder, ".")
-	if idx < 0 {
-		return ""
-	}
-	return c.MessageBuilder[:idx]
-}
-
-// MessageBuilderFunc returns the function name portion of MessageBuilder (after last dot).
-func (c Model) MessageBuilderFunc() string {
-	idx := strings.LastIndex(c.MessageBuilder, ".")
-	if idx < 0 {
-		return c.MessageBuilder
-	}
-	return c.MessageBuilder[idx+1:]
 }

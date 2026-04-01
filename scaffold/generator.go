@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -226,34 +225,6 @@ func (g *generator) getFileUserCodeBlocks(path string) (map[string]string, error
 	}
 
 	return result, nil
-}
-
-func acquireLock(dir string) (*os.File, error) {
-	lockPath := path.Join(dir, ".boilerplate-go.lock")
-
-	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-	if err != nil {
-		if os.IsExist(err) {
-			content, readErr := os.ReadFile(lockPath)
-			if readErr == nil && len(content) > 0 {
-				return nil, fmt.Errorf("another boilerplate-go process (PID %s) is already running in this directory", string(content))
-			}
-
-			return nil, fmt.Errorf("another boilerplate-go process is already running in this directory (if this is stale, remove %s)", lockPath)
-		}
-
-		return nil, fmt.Errorf("create lock file: %w", err)
-	}
-
-	fmt.Fprint(f, strconv.Itoa(os.Getpid()))
-
-	return f, nil
-}
-
-func releaseLock(f *os.File) {
-	name := f.Name()
-	f.Close()
-	os.Remove(name)
 }
 
 func Generate(config *config.Config, options ...optionutil.Option[generatorOptions]) error {

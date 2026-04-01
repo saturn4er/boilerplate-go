@@ -91,8 +91,6 @@ func NewUsersStorage(db *gorm.DB, logger *logging.Logger) authsvc.UsersStorage {
 			},
 			LockScope: "auth.Users",
 		},
-		// user code 'User custom metods'
-		// end user code 'User custom metods'
 	}
 }
 
