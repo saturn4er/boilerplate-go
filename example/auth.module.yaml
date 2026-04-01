@@ -5,6 +5,9 @@ types:
   models:
     - name: User
       table_name: users
+      unique_indexes:
+        - constraint_name: idx_users_email
+          fields: [Email]
       fields:
         - { name: ID, type: uuid, primary_key: true, filterable: true }
         - { name: Email, type: string, filterable: true }

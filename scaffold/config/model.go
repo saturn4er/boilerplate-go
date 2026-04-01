@@ -25,6 +25,17 @@ type QualifiedFunc struct {
 	Func    string
 }
 
+type UniqueIndex struct {
+	ConstraintName string   `yaml:"constraint_name"`
+	Fields         []string `yaml:"fields"`
+}
+
+// ErrorName returns the joined field names used for error constant naming.
+// e.g. ["Name", "OrgID"] → "NameOrgID"
+func (u UniqueIndex) ErrorName() string {
+	return strings.Join(u.Fields, "")
+}
+
 type Model struct {
 	ID                uint                 `yaml:"id"`
 	Admin             ConfigModelAdmin     `yaml:"admin"`
@@ -37,6 +48,7 @@ type Model struct {
 	DoNotPersists     bool                 `yaml:"do_not_persists"`
 	TableName         string               `yaml:"table_name"`
 	NoLocalOutbox     bool                 `yaml:"no_local_outbox"`
+	UniqueIndexes     []UniqueIndex        `yaml:"unique_indexes"`
 	MessageBuilder    *QualifiedFunc       `yaml:"-"`
 	RawMessageBuilder string               `yaml:"message_builder"`
 }
@@ -70,6 +82,15 @@ func (c *Model) Init(config *Config, moduleName string) error {
 
 	if c.PluralName == "" {
 		c.PluralName = c.Name + "s"
+	}
+
+	for i, idx := range c.UniqueIndexes {
+		if idx.ConstraintName == "" {
+			return fmt.Errorf("model %s: unique_indexes[%d] must have a non-empty constraint_name", c.Name, i)
+		}
+		if len(idx.Fields) == 0 {
+			return fmt.Errorf("model %s: unique_indexes[%d] must have at least one field", c.Name, i)
+		}
 	}
 
 	if c.RawMessageBuilder != "" {

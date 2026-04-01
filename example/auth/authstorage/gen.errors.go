@@ -25,7 +25,12 @@ func wrapUserQueryError(err error) error {
 
 	if errors.As(err, &pgErr) {
 		if pgErr.Code == "23505" {
-			return errors.WithStack(errors1.Join(authsvc.ErrUserAlreadyExists, err))
+			switch pgErr.ConstraintName {
+			case "idx_users_email":
+				return errors.WithStack(errors1.Join(authsvc.ErrUserEmailAlreadyExists, err))
+			default:
+				return errors.WithStack(errors1.Join(authsvc.ErrUserAlreadyExists, err))
+			}
 		}
 	}
 
