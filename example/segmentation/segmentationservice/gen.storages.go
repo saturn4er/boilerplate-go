@@ -11,6 +11,8 @@ import (
 
 type Storage interface {
 	UserTags() UserTagsStorage
+	SomeModels() SomeModelsStorage
+	SomeOtherModels() SomeOtherModelsStorage
 	IdempotencyKeys() idempotency.Storage
 	ExecuteInTransaction(ctx context.Context, cb func(ctx context.Context, tx Storage) error) error
 	WithAdvisoryLock(ctx context.Context, scope string, lockID int64) error
@@ -25,3 +27,19 @@ type UserTagsStorage interface {
 
 // user code 'UserTag definitions'
 // end user code 'UserTag definitions'
+type SomeModelsStorage interface {
+	dbutil.EntityStorage[SomeModel, SomeModelFilter]
+	// user code 'SomeModel metods'
+	// end user code 'SomeModel metods'
+}
+
+// user code 'SomeModel definitions'
+// end user code 'SomeModel definitions'
+type SomeOtherModelsStorage interface {
+	dbutil.EntityStorage[SomeOtherModel, SomeOtherModelFilter]
+	// user code 'SomeOtherModel metods'
+	// end user code 'SomeOtherModel metods'
+}
+
+// user code 'SomeOtherModel definitions'
+// end user code 'SomeOtherModel definitions'

@@ -30,3 +30,19 @@ const (
 	ErrSetUserTagCommandDataNotFound      = NotFoundError("SetUserTagCommandData")
 	ErrSetUserTagCommandDataAlreadyExists = AlreadyExistsError("SetUserTagCommandData")
 )
+const (
+	ErrSomeModelNotFound      = NotFoundError("SomeModel")
+	ErrSomeModelAlreadyExists = AlreadyExistsError("SomeModel")
+)
+const (
+	ErrSomeOtherModelNotFound      = NotFoundError("SomeOtherModel")
+	ErrSomeOtherModelAlreadyExists = AlreadyExistsError("SomeOtherModel")
+)
+const (
+	ErrOneOfValue1NotFound      = NotFoundError("OneOfValue1")
+	ErrOneOfValue1AlreadyExists = AlreadyExistsError("OneOfValue1")
+)
+const (
+	ErrOneOfValue2NotFound      = NotFoundError("OneOfValue2")
+	ErrOneOfValue2AlreadyExists = AlreadyExistsError("OneOfValue2")
+)
