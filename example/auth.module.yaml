@@ -2,6 +2,19 @@ types:
   enums:
     - name: Role
       values: [Admin, User]
+      helpers:
+        is_valid: true
+        is: true
+        validate: true
+        stringer: true
+        all_values:
+          var_name: AllRoles
+          func_name: AllRolesFn
+        is_category:
+          - name: SuperUser
+            values:
+              - Admin
+
   models:
     - name: User
       table_name: users

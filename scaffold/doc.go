@@ -13,6 +13,9 @@
 //  4. Extract and preserve user code blocks from existing generated files.
 //  5. Format output with goimports and write to disk.
 //
+// A file-based lock prevents concurrent generator runs in the same directory.
+// Stale locks from crashed processes are detected via PID checking.
+//
 // # Templates
 //
 // Templates are embedded .tpl files with a JSON header specifying the output

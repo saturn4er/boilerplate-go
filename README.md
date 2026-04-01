@@ -155,6 +155,7 @@ modules:
 | `do_not_persists` | bool | Transient model, not stored in DB |
 | `no_local_outbox` | bool | Don't generate outbox in owning module |
 | `message_builder` | string | Custom function to build outbox messages |
+| `unique_indexes` | list | Unique index constraints for conflict error handling |
 | `fields` | list | Model fields |
 
 ### Types
@@ -188,6 +189,39 @@ types:
 ```
 
 Generates an interface-based polymorphic type with type-safe matching.
+
+### Unique Index Error Handling
+
+Define unique indexes on models to generate per-constraint conflict errors:
+
+```yaml
+types:
+  models:
+    - name: User
+      table_name: users
+      unique_indexes:
+        - constraint_name: users_email_key
+          fields: [Email]
+        - constraint_name: users_name_org_id_key
+          fields: [Name, OrgID]
+      fields:
+        - { name: ID, type: uuid, primary_key: true }
+        - { name: Email, type: string }
+        - { name: Name, type: string }
+        - { name: OrgID, type: uuid }
+```
+
+This generates a `ConflictError` type in the service layer and specific error variables per constraint:
+
+```go
+// Generated error variables
+var ErrUserEmailAlreadyExists = &ConflictError{Entity: "User", Fields: []string{"Email"}}
+var ErrUserNameOrgIDAlreadyExists = &ConflictError{Entity: "User", Fields: []string{"Name", "OrgID"}}
+
+// Storage layer automatically maps PostgreSQL constraint violations to these errors
+```
+
+The generic `ErrUserAlreadyExists` is still returned for unrecognized constraints.
 
 ### Transactional Outbox Events
 
@@ -279,6 +313,24 @@ See the [`example/`](example/) directory for a complete two-module application d
 - Cross-module event production (auth -> segmentation)
 - Transactional outbox with custom message builders
 - Service/storage layer separation
+
+## Schema Support
+
+JSON Schema files are provided for IDE autocompletion and validation of configuration files.
+
+Add this comment to the top of your YAML files:
+
+**gen.yaml:**
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/saturn4er/boilerplate-go/master/gen.schema.json
+```
+
+**\*.module.yaml:**
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/saturn4er/boilerplate-go/master/module.schema.json
+```
+
+This works with VS Code (via the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)) and JetBrains IDEs.
 
 ## Requirements
 

@@ -40,6 +40,11 @@
 //
 //   - [github.com/saturn4er/boilerplate-go/lib/dbutil]: Generic EntityStorage interface and GORM implementation.
 //   - [github.com/saturn4er/boilerplate-go/lib/filter]: Composable typed query filters (Equals, In, Contains, etc.).
+//
+// # Unique Index Error Handling
+//
+// Models with unique_indexes generate per-constraint ConflictError variables,
+// allowing callers to distinguish which unique constraint was violated.
 //   - [github.com/saturn4er/boilerplate-go/lib/pagination]: Generic pagination types.
 //   - [github.com/saturn4er/boilerplate-go/lib/order]: Generic ordering with direction support.
 //   - [github.com/saturn4er/boilerplate-go/lib/idempotency]: Duplicate message detection.
