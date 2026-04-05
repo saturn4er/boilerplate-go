@@ -88,6 +88,7 @@ func (s *ConfigModelFieldAdmin) UnmarshalYAML(unmarshal func(interface{}) error)
 type ModelField struct {
 	Name          string                `yaml:"name"`
 	DBName        string                `yaml:"database_name"`
+	JSONName      string                `yaml:"json_name"`
 	Type          Type                  `yaml:"type"`
 	Filterable    bool                  `yaml:"filterable"`
 	DoNotPersists bool                  `yaml:"do_not_persists"`
@@ -112,6 +113,10 @@ func (c *ModelField) UnmarshalYAML(unmarshal func(interface{}) error) error {
 func (c *ModelField) Init(config *Config, moduleName string) error {
 	if c.DBName == "" {
 		c.DBName = strcase.SnakeCase(c.Name)
+	}
+
+	if c.JSONName == "" {
+		c.JSONName = strcase.SnakeCase(c.Name)
 	}
 
 	if err := c.Type.Init(config, moduleName); err != nil {

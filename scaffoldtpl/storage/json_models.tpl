@@ -38,7 +38,7 @@
 
         {{- if not $field.DoNotPersists }}
             {{- $fieldType := (goType $field.Type).DBAlternative }}
-            {{ template "storage.field.json_model" $field }} {{(goType $field.Type).DBAlternative.Ref}} `json:"{{$field.Name | snakeCase}}"`
+            {{ template "storage.field.json_model" $field }} {{(goType $field.Type).DBAlternative.Ref}} `json:"{{$field.JSONName}}"`
         {{- end }}
     {{- end }}
     }
