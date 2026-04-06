@@ -1,9 +1,0 @@
-root_package_name: "github.com/saturn4er/boilerplate-go/test"
-goimports_local: "github.com/saturn4er/boilerplate-go"
-
-modules:
-  test:
-    imports:
-      - test.module.models.yaml
-      - test.module.enums.yaml
-      - test.module.events.yaml

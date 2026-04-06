@@ -1,0 +1,404 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "boilerplate-go Module Config",
+  "description": "Module configuration file (*.module.yaml) for boilerplate-go code generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "types": {
+      "$ref": "#/$defs/Types"
+    },
+    "produces": {
+      "type": "array",
+      "description": "Cross-module event references in \"module.EventName\" format.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*$"
+      }
+    }
+  },
+  "$defs": {
+    "Types": {
+      "type": "object",
+      "description": "Container for type definitions.",
+      "additionalProperties": false,
+      "properties": {
+        "enums": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Enum"
+          }
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Model"
+          }
+        },
+        "one_ofs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OneOf"
+          }
+        }
+      }
+    },
+    "Enum": {
+      "type": "object",
+      "description": "Enum type definition.",
+      "required": ["name", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Enum type name (PascalCase)."
+        },
+        "package": {
+          "type": "string",
+          "description": "Override Go package for this enum."
+        },
+        "values": {
+          "type": "array",
+          "description": "Enum variant names.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "helpers": {
+          "$ref": "#/$defs/EnumHelpers"
+        }
+      }
+    },
+    "EnumHelpers": {
+      "description": "Enum helper method generation config. Use true to enable all defaults, or an object for fine-grained control.",
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "is_valid": {
+              "type": "boolean",
+              "description": "Generate IsValid() method."
+            },
+            "is": {
+              "type": "boolean",
+              "description": "Generate Is*() methods for each value."
+            },
+            "is_category": {
+              "type": "array",
+              "description": "Generate Is*() category grouping methods.",
+              "items": {
+                "type": "object",
+                "required": ["name", "values"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "values": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "validate": {
+              "type": "boolean",
+              "description": "Generate Validate() method."
+            },
+            "stringer": {
+              "type": "boolean",
+              "description": "Generate String() method."
+            },
+            "all_values": {
+              "type": "object",
+              "description": "Generate a variable and/or function listing all enum values.",
+              "additionalProperties": false,
+              "properties": {
+                "var_name": {
+                  "type": "string",
+                  "description": "Variable name for the all-values slice."
+                },
+                "func_name": {
+                  "type": "string",
+                  "description": "Function name returning all values."
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Model": {
+      "type": "object",
+      "description": "Model (entity) definition.",
+      "required": ["name", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Numeric identifier for the model (required for one_of values).",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "description": "Model name (PascalCase)."
+        },
+        "package": {
+          "type": "string",
+          "description": "Override Go package for this model."
+        },
+        "plural_name": {
+          "type": "string",
+          "description": "Plural form of the model name. Defaults to Name + \"s\"."
+        },
+        "table_name": {
+          "type": "string",
+          "description": "Database table name."
+        },
+        "storage_type": {
+          "type": "string",
+          "description": "Storage type for the model.",
+          "enum": ["tx_outbox"]
+        },
+        "do_not_persists": {
+          "type": "boolean",
+          "description": "Transient model not stored in the database.",
+          "default": false
+        },
+        "no_local_outbox": {
+          "type": "boolean",
+          "description": "Don't generate outbox in the owning module.",
+          "default": false
+        },
+        "message_builder": {
+          "type": "string",
+          "description": "Fully qualified Go function to build outbox messages (package.FuncName)."
+        },
+        "type_parameters": {
+          "type": "array",
+          "description": "Generic type parameters for the model.",
+          "items": {
+            "$ref": "#/$defs/ModelTypeParameter"
+          }
+        },
+        "unique_indexes": {
+          "type": "array",
+          "description": "Unique index constraints for conflict error handling.",
+          "items": {
+            "$ref": "#/$defs/UniqueIndex"
+          }
+        },
+        "admin": {
+          "$ref": "#/$defs/ModelAdmin"
+        },
+        "fields": {
+          "type": "array",
+          "description": "Model fields.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "ModelTypeParameter": {
+      "type": "object",
+      "description": "Generic type parameter for a model.",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "constraint": {
+          "type": "string"
+        }
+      }
+    },
+    "UniqueIndex": {
+      "type": "object",
+      "description": "Unique index constraint definition.",
+      "required": ["constraint_name", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "constraint_name": {
+          "type": "string",
+          "description": "Database constraint name.",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "description": "Field names included in this unique index.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "ModelAdmin": {
+      "type": "object",
+      "description": "Admin UI configuration for the model.",
+      "additionalProperties": false,
+      "properties": {
+        "customizable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ModelField": {
+      "type": "object",
+      "description": "Model field definition.",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Field name (PascalCase)."
+        },
+        "database_name": {
+          "type": "string",
+          "description": "Override database column name. Defaults to snake_case of name."
+        },
+        "type": {
+          "$ref": "#/$defs/FieldType"
+        },
+        "filterable": {
+          "type": "boolean",
+          "description": "Generate filter support for this field.",
+          "default": false
+        },
+        "do_not_persists": {
+          "type": "boolean",
+          "description": "Field is not stored in the database.",
+          "default": false
+        },
+        "primary_key": {
+          "type": "boolean",
+          "description": "Mark as primary key.",
+          "default": false
+        },
+        "admin": {
+          "$ref": "#/$defs/FieldAdmin"
+        }
+      }
+    },
+    "FieldType": {
+      "description": "Field type. Use a string for simple types (e.g. \"string\", \"uuid\", \"*MyModel\", \"[]string\", \"map[string]int\") or an object for complex types.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/TypeObject"
+        }
+      ]
+    },
+    "TypeObject": {
+      "type": "object",
+      "description": "Structured type definition.",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "Go import path for this type."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type name (e.g. \"string\", \"slice\", \"map\", \"ptr\", or a custom type name)."
+        },
+        "type_parameters": {
+          "type": "array",
+          "description": "Generic type parameters.",
+          "items": {
+            "$ref": "#/$defs/TypeObject"
+          }
+        },
+        "elem": {
+          "$ref": "#/$defs/TypeObject",
+          "description": "Element type (for slice, map, ptr)."
+        },
+        "key": {
+          "$ref": "#/$defs/TypeObject",
+          "description": "Key type (for map)."
+        }
+      }
+    },
+    "FieldAdmin": {
+      "type": "object",
+      "description": "Admin UI configuration for the field.",
+      "additionalProperties": false,
+      "properties": {
+        "hide_for_list": {
+          "type": "boolean",
+          "description": "Hide this field in list views."
+        },
+        "hide": {
+          "type": "boolean",
+          "description": "Hide this field entirely in admin UI."
+        },
+        "creatable": {
+          "type": "boolean",
+          "description": "Field is editable when creating.",
+          "default": true
+        },
+        "editable": {
+          "type": "boolean",
+          "description": "Field is editable when updating.",
+          "default": true
+        },
+        "link_to": {
+          "type": "string",
+          "description": "Link this field to another admin resource."
+        }
+      }
+    },
+    "OneOf": {
+      "type": "object",
+      "description": "OneOf (sum/variant) type definition.",
+      "required": ["name", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "OneOf type name (PascalCase)."
+        },
+        "values": {
+          "type": "array",
+          "description": "Variant values. Use a string for the model name, or an object with \"modelname\" key.",
+          "items": {
+            "$ref": "#/$defs/OneOfValue"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "OneOfValue": {
+      "description": "A variant value in a OneOf type. Use a string (model name) or an object with \"modelname\".",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": ["modelname"],
+          "additionalProperties": false,
+          "properties": {
+            "modelname": {
+              "type": "string",
+              "description": "Name of the model for this variant."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+types:
+  enums:
+    - name: Role
+      values: [Admin, User]
+      helpers:
+        is_valid: true
+        is: true
+        validate: true
+        stringer: true
+        all_values:
+          var_name: AllRoles
+          func_name: AllRolesFn
+        is_category:
+          - name: SuperUser
+            values:
+              - Admin
+
+  models:
+    - name: User
+      table_name: users
+      unique_indexes:
+        - constraint_name: idx_users_email
+          fields: [Email]
+      fields:
+        - { name: ID, type: uuid, primary_key: true, filterable: true }
+        - { name: Email, type: string, filterable: true }
+        - { name: Name, type: string }
+        - { name: Role, type: Role }
+produces:
+  - segmentation.SetUserTagCommand

@@ -1,0 +1,81 @@
+
+types:
+  enums:
+    - name: SomeEnum
+      values: [ Value1, Value2 ]
+  models:
+    - name: UserTag
+      table_name: user_tags
+      fields:
+        - { name: ID, type: uuid, primary_key: true, filterable: true }
+        - { name: UserID, type: uuid, filterable: true }
+        - { name: Key, type: string, filterable: true }
+        - { name: Value, type: string }
+    - name: SetUserTagCommand
+      storage_type: tx_outbox
+      no_local_outbox: true
+      message_builder: "github.com/saturn4er/boilerplate-go/example/segmentation/segmentationevent.BuildSetUserTagCommandMessage"
+      fields:
+        - { name: ID, type: uuid, primary_key: true }
+        - { name: Data, type: SetUserTagCommandData }
+        - { name: IdempotencyKey, type: string }
+    - name: SetUserTagCommandData
+      do_not_persists: true
+      fields:
+        - { name: UserID, type: uuid }
+        - { name: Key, type: string }
+        - { name: Value, type: string }
+
+    - name: SomeModel
+      pk_index_name: some_models_pkey
+      table_name: some_models
+      fields:
+        - { name: ID, type: uuid, filterable: true, primary_key: true }
+        - { name: Name, type: string, filterable: true }
+        - { name: Description, type: "*string", filterable: true }
+        - { name: ModelField, type: "SomeOtherModel" }
+        - { name: ModelPtrField, type: "*SomeOtherModel" }
+        - { name: OneOfField, type: "SomeOneOf" }
+        - { name: OneOfPtrField, type: "*SomeOneOf" }
+        - { name: EnumField, type: "SomeEnum" }
+        - { name: EnumPtrField, type: "*SomeEnum" }
+        - { name: AnyField, type: "any" }
+        - { name: AnyPtrField, type: "*any" }
+        - { name: MapModelField, type: "map[string]SomeOtherModel" }
+        - { name: MapModelPtrField, type: "map[string]*SomeOtherModel" }
+        - { name: MapOneOfField, type: "map[string]SomeOneOf" }
+        - { name: MapOneOfPtrField, type: "map[string]*SomeOneOf" }
+        - { name: MapEnumField, type: "map[string]SomeEnum" }
+        - { name: MapEnumPtrField, type: "map[string]*SomeEnum" }
+        - { name: MapAnyField, type: "map[string]any" }
+        - { name: MapAnyPtrField, type: "map[string]*any" }
+        - { name: ModelSliceField, type: "[]SomeOtherModel" }
+        - { name: ModelPtrSliceField, type: "[]*SomeOtherModel" }
+        - { name: OneOfSliceField, type: "[]SomeOneOf" }
+        - { name: OneOfPtrSliceField, type: "[]*SomeOneOf" }
+        - { name: SliceEnumField, type: "[]SomeEnum" }
+        - { name: SliceEnumPtrField, type: "[]*SomeEnum" }
+        - { name: SliceAnyField, type: "[]any" }
+        - { name: SliceAnyPtrField, type: "[]*any" }
+
+    - name: SomeOtherModel
+      pk_index_name: some_other_models_pkey
+      table_name: some_other_models
+      fields:
+        - { name: ID, type: uuid, filterable: true, primary_key: true }
+    - name: OneOfValue1
+      id: 1
+      do_not_persists: true
+      fields:
+        - { name: Value, type: string }
+    - name: OneOfValue2
+      id: 2
+      do_not_persists: true
+      fields:
+        - { name: Value, type: string }
+  one_ofs:
+    - name: SomeOneOf
+      values:
+        - OneOfValue1
+        - OneOfValue2
+

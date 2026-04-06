@@ -2,7 +2,7 @@
 "file_path": "{{.Module}}/{{.Module}}storage/gen.storages.go",
 "package_name": "{{.Module}}storage",
 "package_path": "{{.Config.RootPackageName}}/{{.Module}}/{{.Module}}storage",
-"condition": "len(Config.Modules[Module].Value.Types.Models) > 0"
+"condition": "len(Config.Modules[Module].Value.Types.Models) > 0 || len(Config.Modules[Module].Value.ProducedEvents) > 0"
 }
 <><><>
 
@@ -35,14 +35,23 @@ var _ {{$servicePkg.Ref "Storage"}} = &Storages{}
         {{continue}}
     {{- end }}
     {{- if eq $model.StorageType "tx_outbox" }}
+        {{- if not $model.NoLocalOutbox }}
     func (s Storages) {{$model.PluralName}}() {{$servicePkg.Ref (print $model.PluralName "Outbox")}} {
       return New{{$model.PluralName}}Outbox(s.db, s.processors)
     }
+        {{- end }}
     {{- else }}
     func (s Storages) {{$model.PluralName}}() {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
       return New{{$model.PluralName}}Storage(s.db, s.logger)
     }
     {{- end }}
+{{- end }}
+
+{{- range $pe := $module.ProducedEvents }}
+    {{ $srcSvcPkg := import (print $.Config.RootPackageName "/" $pe.ModuleName "/" $pe.ModuleName "service") (print $pe.ModuleName "svc") }}
+    func (s Storages) {{$pe.Event.PluralName}}() {{$servicePkg.Ref (print $pe.Event.PluralName "Outbox")}} {
+      return New{{$pe.Event.PluralName}}Outbox(s.db, s.processors)
+    }
 {{- end }}
 
 func (s Storages) IdempotencyKeys() {{$idempotencyPkg.Ref "Storage"}} {
@@ -81,47 +90,32 @@ return &Storages{db: db, logger: logger, processors: processors}
         {{continue}}
     {{- end }}
     {{- if eq $model.StorageType "tx_outbox" }}
+        {{- if not $model.NoLocalOutbox }}
         func New{{$model.PluralName}}Outbox(db *{{$gormPkg.Ref "DB"}}, processors []{{$txoutboxPkg.Ref "MessageProcessor"}}) {{$servicePkg.Ref (print $model.PluralName "Outbox")}} {
           return {{$txoutboxPkg.Ref "GormStorage"}}[{{$servicePkg.Ref $model.Name}}]{
             DB: db,
+            {{- if $model.MessageBuilder }}
+            {{ $msgBuilderPkg := import $model.MessageBuilder.Package }}
+            BuildMessage:     {{$msgBuilderPkg.Ref $model.MessageBuilder.Func}},
+            {{- else }}
             BuildMessage:     build{{$model.Name}}Message,
+            {{- end }}
             MessageProcessors: processors,
           }
         }
+        {{- end }}
     {{- else }}
         {{ $modelGoType := goType $model }}
         {{ $dbType := $modelGoType.InLocalPackage.WithName (print "db" $modelGoType.Type) }}
         {{ $dbTypeRef := $dbType.Ref }}
 
-        {{- if $model.HasCustomDBMethods }}
-          type {{$model.PluralName}}Storage struct {
-          {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]
-          }
-          {{ userCodeBlock (printf "%s custom methods" $model.Name) }}
-          func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
-            return &{{$model.PluralName}}Storage{
-              GormEntityStorage: {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
-                Logger: logger,
-                DB: db,
-                DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
-                ConvertToInternal:     {{template "storage.func.table_model_to_internal" $model.Name}},
-                ConvertToExternal:     {{template "storage.func.table_model_to_service" $model.Name}},
-                BuildFilterExpression: func(filter *{{$servicePkg.Ref (print $model.Name "Filter")}}) ({{ $clausePkg.Ref "Expression"}}, error) {
-                  return {{template "storage.func.build_db_filter" $model.Name}}(filter)
-                },
-                FieldMapping:          map[any]{{$clausePkg.Ref "Column"}}{
-                  {{- range $field := $model.Fields }}
-                      {{$servicePkg.Ref (print $model.Name "Field" $field.Name)}}: {Name: "{{$field.DBName}}"},
-                  {{- end }}
-                },
-                LockScope:  "{{$.Module}}.{{$model.PluralName}}",
-              },
-              {{ userCodeBlock (printf "%s custom metods" $model.Name) }}
-            }
-          }
-        {{- else }}
-          func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
-            return {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
+        type {{$model.PluralName}}Storage struct {
+        {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]
+        }
+        {{ userCodeBlock (printf "%s custom methods" $model.Name) }}
+        func New{{$model.PluralName}}Storage(db *{{$gormPkg.Ref "DB"}}, logger *{{$loggingPkg.Ref "Logger"}}) {{$servicePkg.Ref (print $model.PluralName "Storage")}} {
+          return &{{$model.PluralName}}Storage{
+            GormEntityStorage: {{$dbutilPkg.Ref "GormEntityStorage"}}[{{$servicePkg.Ref $model.Name}}, {{$dbTypeRef}}, {{$servicePkg.Ref (print $model.Name "Filter")}}]{
               Logger: logger,
               DB: db,
               DBErrorsWrapper:       wrap{{$model.Name}}QueryError,
@@ -136,8 +130,24 @@ return &Storages{db: db, logger: logger, processors: processors}
                 {{- end }}
               },
               LockScope:  "{{$.Module}}.{{$model.PluralName}}",
-            }
+            },
           }
-        {{- end }}
+        }
     {{- end }}
+{{- end }}
+
+{{- range $pe := $module.ProducedEvents }}
+    {{ $srcSvcPkg := import (print $.Config.RootPackageName "/" $pe.ModuleName "/" $pe.ModuleName "service") (print $pe.ModuleName "svc") }}
+    func New{{$pe.Event.PluralName}}Outbox(db *{{$gormPkg.Ref "DB"}}, processors []{{$txoutboxPkg.Ref "MessageProcessor"}}) {{$servicePkg.Ref (print $pe.Event.PluralName "Outbox")}} {
+      return {{$txoutboxPkg.Ref "GormStorage"}}[{{$srcSvcPkg.Ref $pe.Event.Name}}]{
+        DB: db,
+        {{- if $pe.Event.MessageBuilder }}
+        {{ $msgBuilderPkg := import $pe.Event.MessageBuilder.Package }}
+        BuildMessage:     {{$msgBuilderPkg.Ref $pe.Event.MessageBuilder.Func}},
+        {{- else }}
+        BuildMessage:     build{{$pe.Event.Name}}Message,
+        {{- end }}
+        MessageProcessors: processors,
+      }
+    }
 {{- end }}

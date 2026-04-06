@@ -228,6 +228,16 @@ func (g *generator) getFileUserCodeBlocks(path string) (map[string]string, error
 }
 
 func Generate(config *config.Config, options ...optionutil.Option[generatorOptions]) error {
+	opts := optionutil.ApplyOptions(&generatorOptions{
+		OutputDir: "./",
+	}, options...)
+
+	lockFile, err := acquireLock(opts.OutputDir)
+	if err != nil {
+		return err
+	}
+	defer releaseLock(lockFile)
+
 	modulesGenerator := generator{
 		config: config,
 		envs:   map[string]string{},
@@ -238,9 +248,7 @@ func Generate(config *config.Config, options ...optionutil.Option[generatorOptio
 		modulesGenerator.envs[split[0]] = split[1]
 	}
 
-	modulesGenerator.options = optionutil.ApplyOptions(&generatorOptions{
-		OutputDir: "./",
-	}, options...)
+	modulesGenerator.options = opts
 
 	templates, err := loadTemplatesFromDir(scaffoldtpl.FS, ".")
 	if err != nil {

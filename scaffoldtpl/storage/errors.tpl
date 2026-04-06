@@ -37,7 +37,18 @@
 
       if {{$errorsPkg.Ref "As"}}(err, &pgErr) {
         if pgErr.Code == "23505" {
+          {{- if $model.UniqueIndexes }}
+          switch pgErr.ConstraintName {
+          {{- range $idx := $model.UniqueIndexes }}
+          case "{{ $idx.ConstraintName }}":
+            return {{$errorsPkg.Ref "WithStack"}}({{$stdErrorsPkg.Ref "Join"}}({{$servicePkg.Ref (printf "Err%s%sAlreadyExists" $model.Name $idx.ErrorName)}}, err))
+          {{- end }}
+          default:
+            return {{$errorsPkg.Ref "WithStack"}}({{$stdErrorsPkg.Ref "Join"}}({{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}, err))
+          }
+          {{- else }}
           return {{$errorsPkg.Ref "WithStack"}}({{$stdErrorsPkg.Ref "Join"}}({{$servicePkg.Ref (printf "Err%sAlreadyExists" $model.Name)}}, err))
+          {{- end }}
         }
       }
 
