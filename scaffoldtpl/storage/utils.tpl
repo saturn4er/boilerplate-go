@@ -11,7 +11,7 @@
 {{- $errorsPkg := import "github.com/pkg/errors" -}}
 {{- $uuidPkg := import "github.com/google/uuid" -}}
 
-type mapValue[C comparable, B any] map[string]B
+type mapValue[C comparable, B any] map[C]B
 
 func (m mapValue[C, B]) Value() ({{$driverPkg.Ref "Value"}}, error) {
 return {{$jsonPkg.Ref "Marshal"}}(m)
