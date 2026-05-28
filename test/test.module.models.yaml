@@ -8,7 +8,7 @@ types:
       table_name: some_models
       fields:
         - { name: ID, type: uuid, filterable: true, primary_key: true }
-        - { name: Name, type: string, filterable: true }
+        - { name: Name, type: string, filterable: true, gorm: "index;not null" }
         - { name: Description, type: "*string", filterable: true }
         - { name: ModelField, type: "SomeOtherModel"}
         - { name: ModelPtrField, type: "*SomeOtherModel"}
@@ -34,6 +34,7 @@ types:
         - { name: SliceEnumPtrField, type: "[]*SomeEnum" }
         - { name: SliceAnyField, type: "[]any" }
         - { name: SliceAnyPtrField, type: "[]*any" }
+        - { name: UpdatedAt, type: "timestamp", gorm: "autoUpdateTime:false" }
 
     - name: SomeOtherModel
       pk_index_name: some_other_models_pkey

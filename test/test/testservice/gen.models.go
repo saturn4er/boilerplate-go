@@ -1,6 +1,8 @@
 package testservice
 
 import (
+	time "time"
+
 	uuid "github.com/google/uuid"
 
 	filter "github.com/saturn4er/boilerplate-go/lib/filter"
@@ -151,6 +153,7 @@ const (
 	SomeModelFieldSliceEnumPtrField
 	SomeModelFieldSliceAnyField
 	SomeModelFieldSliceAnyPtrField
+	SomeModelFieldUpdatedAt
 )
 
 type SomeModelFilter struct {
@@ -190,6 +193,7 @@ type SomeModel struct {
 	SliceEnumPtrField  []*SomeEnum
 	SliceAnyField      []any
 	SliceAnyPtrField   []*any
+	UpdatedAt          time.Time
 }
 
 // user code 'SomeModel methods'
@@ -388,6 +392,7 @@ func (s *SomeModel) Copy() SomeModel {
 		tmp27 = append(tmp27, itemCopy7)
 	}
 	result.SliceAnyPtrField = tmp27
+	result.UpdatedAt = s.UpdatedAt
 
 	return result
 }
@@ -671,6 +676,9 @@ func (s *SomeModel) Equals(to *SomeModel) bool {
 				return false
 			}
 		}
+	}
+	if s.UpdatedAt != to.UpdatedAt {
+		return false
 	}
 
 	return true

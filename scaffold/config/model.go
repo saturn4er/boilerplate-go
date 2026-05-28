@@ -89,6 +89,7 @@ type ModelField struct {
 	Name          string                `yaml:"name"`
 	DBName        string                `yaml:"database_name"`
 	JSONName      string                `yaml:"json_name"`
+	Gorm          string                `yaml:"gorm"`
 	Type          Type                  `yaml:"type"`
 	Filterable    bool                  `yaml:"filterable"`
 	DoNotPersists bool                  `yaml:"do_not_persists"`

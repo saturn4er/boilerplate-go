@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	if version {
-		log.Printf("go-scaffold version: 0.0.1\n")
+		log.Printf("boilerplate-go version: v1.6.2\n")
 		os.Exit(0)
 	}
 

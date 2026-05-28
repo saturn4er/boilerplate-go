@@ -1,3 +1,3 @@
 package test
 
-//go:generate go run ../cmd/go-scaffold/main.go ./gen.yaml
+//go:generate go run ../cmd/boilerplate-go/main.go ./gen.yaml

@@ -12,7 +12,7 @@ import (
 	// end user code 'imports'
 )
 
-type mapValue[C comparable, B any] map[string]B
+type mapValue[C comparable, B any] map[C]B
 
 func (m mapValue[C, B]) Value() (driver.Value, error) {
 	return json.Marshal(m)
