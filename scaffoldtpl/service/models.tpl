@@ -9,6 +9,7 @@
 {{- $fmtPkg := import "fmt" }}
 
 {{- range $oneOf := $module.Types.OneOfs}}
+  //sumtype:decl
   type {{$oneOf.Name}} interface{
   is{{$oneOf.Name}}()
   {{$oneOf.Name}}Equals({{$oneOf.Name}}) bool
