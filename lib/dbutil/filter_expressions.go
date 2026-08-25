@@ -272,5 +272,5 @@ func containsFilterGormCondition[T any](containsFilter *filter.ContainsFilter[T]
 }
 
 func containsCIFilterGormCondition[T any](containsCIFilter *filter.ContainsCIFilter[T], column string) (clause.Expression, error) {
-	return clause.Expr{SQL: fmt.Sprintf("lower(%s) LIKE lower(?)", column), Vars: []interface{}{"%" + containsCIFilter.Substring + "%"}}, nil
+	return clause.Expr{SQL: fmt.Sprintf("%s ILIKE ?", column), Vars: []interface{}{"%" + containsCIFilter.Substring + "%"}}, nil
 }
