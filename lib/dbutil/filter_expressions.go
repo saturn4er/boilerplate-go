@@ -1,6 +1,8 @@
 package dbutil
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm/clause"
 
@@ -35,6 +37,8 @@ func FilterExpression[T, V any](value filter.Filter[T], column string, mapper fu
 		return orFilterGormCondition(typedValue, column, mapper)
 	case *filter.ContainsFilter[T]:
 		return containsFilterGormCondition(typedValue, column)
+	case *filter.ContainsCIFilter[T]:
+		return containsCIFilterGormCondition(typedValue, column)
 	case *filter.HasPrefixFilter[T]:
 		return hasPrefixFilterGormCondition(typedValue, column)
 	case *filter.HasSuffixFilter[T]:
@@ -265,4 +269,8 @@ func hasSuffixFilterGormCondition[T any](hasSuffixFilter *filter.HasSuffixFilter
 
 func containsFilterGormCondition[T any](containsFilter *filter.ContainsFilter[T], column string) (clause.Expression, error) {
 	return clause.Like{Column: column, Value: "%" + containsFilter.Substring + "%"}, nil
+}
+
+func containsCIFilterGormCondition[T any](containsCIFilter *filter.ContainsCIFilter[T], column string) (clause.Expression, error) {
+	return clause.Expr{SQL: fmt.Sprintf("%s ILIKE ?", column), Vars: []interface{}{"%" + containsCIFilter.Substring + "%"}}, nil
 }
